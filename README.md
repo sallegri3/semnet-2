@@ -1,6 +1,9 @@
 # Semnet: tools for metascience
 Semnet is a series of modules for working with semantic networks. More specifically, we implemented algorithms that would help us gather features and rank nodes in terms of their connections to other nodes. The software was designed to work with a [network](https://skr3.nlm.nih.gov/SemMedDB/index.html) of biomedical concepts stored in a locally hosted [Neo4j](https://neo4j.com/) database ([node types](https://www.nlm.nih.gov/research/umls/META3_current_semantic_types.html), [edge types](https://www.nlm.nih.gov/research/umls/META3_current_relations.html)).
 
+## Installation
+To install, clone the repository to your machine, change to the `semnet` directory, and use `pip install .`. You should then be able to `import semnet` and use it.
+
 ## Features
 The following features have been implemented in Semnet:
 - **Utilities**
