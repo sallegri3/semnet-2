@@ -6,7 +6,7 @@ setup(name='semnet',
 	url='https://github.gatech.edu/pathology-dynamics/semnet',
 	author='Andrew Sedler',
 	author_email='asedler3@gatech.edu',
-	packages=['semnet']
+	packages=['semnet'],
 	install_requires=['re', 'hetio', 'xarray', 'numpy', 'collections',
 		'py2neo', 'gzip', 'pickle', 'numpy', 'pandas',
 		'sklearn', 'scipy', 'matplotlib', 'pickle', 'threading',
