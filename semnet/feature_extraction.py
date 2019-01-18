@@ -92,7 +92,7 @@ class DwpcExtractor(BaseFeatureExtractor):
 	def __init__(self):
 		""" Load the metagraph and connect to Neo4j """
 		
-		path = 'data/sem-net-mg_hetiofmt.json.gz'
+		path = '../semnet/data/sem-net-mg_hetiofmt.json.gz'
 		self.metagraph = hetio.readwrite.read_metagraph(path)
 		super(DwpcExtractor, self).__init__()
 	

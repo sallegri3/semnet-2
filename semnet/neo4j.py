@@ -41,7 +41,7 @@ def build_metapath_query(source, target, d):
 		extract(b in relationships(path) | b.predicate ) as edges 
 		"""
     
-	with gzip.open('data/cui2type.pkl.gz', 'rb') as file:
+	with gzip.open('../semnet/data/cui2type.pkl.gz', 'rb') as file:
 		convert2type = pickle.load(file)
 
 	s_type = convert2type[source]

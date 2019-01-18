@@ -8,9 +8,9 @@ Functions for generating negative examples that help denoise LSRs
 """
 
 """ Load dictionaries that help keep track of names and types """
-with gzip.open('data/name2type.pkl.gz', 'rb') as file:
+with gzip.open('../semnet/data/name2type.pkl.gz', 'rb') as file:
    	name2type = pickle.load(file)
-with gzip.open('data/type2names.pkl.gz', 'rb') as file:
+with gzip.open('../semnet/data/type2names.pkl.gz', 'rb') as file:
 	type2names = pickle.load(file)
 
 
