@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'semnet'
+project = 'SemNet'
 copyright = '2019, Laboratory for Pathology Dynamics'
 author = 'Laboratory for Pathology Dynamics'
 
