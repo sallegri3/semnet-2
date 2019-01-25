@@ -1,5 +1,5 @@
 # Minimal makefile for Sphinx documentation
-#
+# Note that only make.bat runs in Windows. "make latexpdf" doesn't yet work in Windows.
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
