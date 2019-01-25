@@ -2,6 +2,8 @@ Updating Docs
 =============
 Use the following steps to make changes to documentation and post them on the page.
 
+.. code-block:: none
+
     cd semnet
     git add .
     git commit -m "[message]"
