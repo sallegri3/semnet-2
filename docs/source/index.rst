@@ -11,6 +11,7 @@ Welcome to semnet's documentation!
    :caption: Contents:
 
    includeme
+   updating_docs
 
 
 Indices and tables
