@@ -1,6 +1,5 @@
 .vscode/
 .ipynb_checkpoints/
-data/
 nbs/.ipynb_checkpoints/
 semnet/.ipynb_checkpoints/
 semnet/__pycache__

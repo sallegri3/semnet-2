@@ -12,9 +12,9 @@ Welcome to semnet's documentation!
 
    includeme
    updating_docs
-..   docfiles/featextract
-..   docfiles/computation
-..   docfiles/utilities
+   docfiles/featextract
+   docfiles/computation
+   docfiles/utilities
 
 
 Indices and tables

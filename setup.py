@@ -8,4 +8,9 @@ setup(name='semnet',
 	author_email='asedler3@gatech.edu',
 	packages=['semnet'],
 	install_requires=['hetio', 'xarray', 'numpy','py2neo', 'pandas', 
-	'sklearn', 'scipy', 'matplotlib', 'tqdm'])
+	'sklearn', 'scipy', 'matplotlib', 'tqdm'],
+	include_package_data=True,
+	package_data={
+		'semnet': ['data/*']
+	}
+)
