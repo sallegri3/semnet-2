@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to semnet's documentation!
+Welcome to SemNet's documentation!
 ==================================
 
 .. toctree::
@@ -11,10 +11,10 @@ Welcome to semnet's documentation!
    :caption: Contents:
 
    includeme
-   updating_docs
    docfiles/featextract
    docfiles/computation
    docfiles/utilities
+   updating_docs
 
 
 Indices and tables
