@@ -8,7 +8,6 @@ used to rank treatments for Alzheimer's disease.
 @author: Andrew Sedler
 @date: July 2, 2018
 
--------
 Reference: 
 Yu, Xiao, et al. "User guided entity similarity search using meta-path 
 selection in heterogeneous information networks." Proceedings of the 
