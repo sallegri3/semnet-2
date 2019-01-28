@@ -15,6 +15,7 @@ Welcome to SemNet's documentation!
    docfiles/computation
    docfiles/utilities
    updating_docs
+   glossary
 
 
 Indices and tables
