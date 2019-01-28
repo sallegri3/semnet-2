@@ -1,11 +1,11 @@
 Feature Extraction
-=======================
+==================
 
 Overview
 --------
-Feature extraction modules are
+We use feature extraction modules to compute features on the graph. Currently, SemNet calculates metapath-based features. 
 
-.. image:: ../_static/feature_extraction.PNG
+.. image:: ../_static/feature_extraction.png
 
 General Feature Extraction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

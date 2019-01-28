@@ -1,7 +1,7 @@
 Overview
 ========
 
-Semnet is a series of modules for working with semantic networks. More specifically, we implemented algorithms that would help us gather features and rank nodes in terms of their connections to other nodes. The software was designed to work with a `network`_ of biomedical concepts stored in a locally hosted `Neo4j`_ database (`node types`_, `edge types`_)
+SemNet is a series of modules for working with semantic networks. More specifically, we implemented algorithms that would help us gather features and rank nodes in terms of their connections to other nodes. The software was designed to work with a `network`_ of biomedical concepts stored in a locally hosted `Neo4j`_ database (`node types`_, `edge types`_)
 
 .. _network: https://skr3.nlm.nih.gov/SemMedDB/index.html
 .. _Neo4j: https://neo4j.com/
