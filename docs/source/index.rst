@@ -44,6 +44,9 @@ Citations
 .. toctree::
     :hidden:
 
+    about_us
+    about_data
+    setup
     docfiles/featextract
     docfiles/computation
     docfiles/utilities
