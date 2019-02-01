@@ -1,4 +1,5 @@
 .vscode/
+.DS_Store
 .ipynb_checkpoints/
 nbs/.ipynb_checkpoints/
 semnet/.ipynb_checkpoints/
