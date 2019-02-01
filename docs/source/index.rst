@@ -3,10 +3,17 @@ SemNet: Semantic Networks in Python
 
 What is SemNet?
 ^^^^^^^^^^^^^^^
-SemNet is a series of modules for working with semantic networks. More specifically, we implemented algorithms that would help us gather features and rank nodes in terms of their connections to other nodes. The software was designed to work with a `network`_ of biomedical concepts stored in a locally hosted `Neo4j`_ database (`node types`_, `edge types`_)
+
+SemNet is a series of modules for working with semantic networks. More
+specifically, we implemented algorithms that would help us gather features and
+rank nodes in terms of their connections to other nodes. The software was
+designed to work with a `network`_ of biomedical concepts stored in a locally
+hosted `Neo4j`_ database (`node types`_, `edge types`_)
 
 .. note::
-    To install, clone `the repository`_ to your machine, change to the ``semnet`` directory, and use ``pip install .``. You should then be able to ``import semnet`` and use it.
+    To install, clone `the repository`_ to your machine, change to the
+    ``semnet`` directory, and use ``pip install .``. You should then be able to
+    ``import semnet`` and use it.
 
 Features
 ^^^^^^^^
