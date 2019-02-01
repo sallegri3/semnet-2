@@ -65,7 +65,7 @@ class CountExtractor(BaseFeatureExtractor):
 		
 		# Retrieve the results from Neo4j
 		params = []
-		for i, (s, t) in enumerate(zip(sources, targets)):
+		for s, t in zip(sources, targets):
 			params.append({'source': s, 'target': t, 'd': d})
 			
 		result = execute_multithread_query(self.get_metapath_counts, params=params, workers=workers)
@@ -132,14 +132,14 @@ class DwpcExtractor(BaseFeatureExtractor):
 		""" Performs all DWPC calculations for all example pairs """
 		
 		if not metapath_counts.any():
-			metapath_counts = get_all_metapath_counts(sources, targets, d, workers)
+			metapath_counts = CountExtractor().get_all_metapath_counts(sources, targets, d, workers)
 		assert isinstance(metapath_counts, xr.DataArray)
 		
 		#metapaths = [list(mps.keys()) for mps in metapath_counts]
-		metapaths = list()
+		#metapaths = list()
 		
 		params = []
-		for i,(s, t) in enumerate(zip(sources, targets)):
+		for s, t in zip(sources, targets):
 			nz_metapath_ix = metapath_counts.loc[s, t, :, 'count'].values.nonzero()
 			nz_metapaths = metapath_counts.metapath.values[nz_metapath_ix]
 			params.append({'source': s, 'target': t, 'metapaths': nz_metapaths, 'damping': damping})
