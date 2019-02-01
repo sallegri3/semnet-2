@@ -57,6 +57,7 @@ Citations
     docfiles/featextract
     docfiles/computation
     docfiles/utilities
+    modules
     updating_docs
     glossary
 

@@ -9,23 +9,16 @@ Utility modules assist with administrative tasks like converting between naming 
 Conversion
 ^^^^^^^^^^
 
-.. automodule:: semnet.conversion
-    :members:
 
 Neo4j
 ^^^^^
 
-.. automodule:: semnet.neo4j
-    :members:
 
 Sample
 ^^^^^^
 
-.. automodule:: semnet.sample
-    :members:
 
 Vectors
 ^^^^^^^
 
-.. automodule:: semnet.vector
-    :members:
+

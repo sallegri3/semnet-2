@@ -48,11 +48,7 @@ Functions
 General Feature Extraction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: semnet.feature_extraction
-    :members:
 
 HeteSim
 ^^^^^^^
 
-.. automodule:: semnet.hetesim
-    :members:
