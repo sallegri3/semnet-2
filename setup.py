@@ -7,7 +7,7 @@ setup(name='semnet',
 	author='Andrew Sedler',
 	author_email='asedler3@gatech.edu',
 	packages=['semnet'],
-	install_requires=['hetio', 'xarray', 'numpy','py2neo', 'pandas', 
+	install_requires=['hetio', 'xarray', 'numpy','py2neo==3.1.2', 'pandas', 
 	'sklearn', 'scipy', 'matplotlib', 'tqdm'],
 	include_package_data=True,
 	package_data={
