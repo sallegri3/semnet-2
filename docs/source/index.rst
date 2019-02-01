@@ -49,7 +49,6 @@ Citations
     * Yu, Xiao, et al. "User guided entity similarity search using meta-path selection in heterogeneous information networks." Proceedings of the 21st ACM international conference on Information and knowledge management. Acm, 2012.
 
 .. toctree::
-    :hidden:
 
     about_us
     about_data
@@ -57,7 +56,7 @@ Citations
     docfiles/featextract
     docfiles/computation
     docfiles/utilities
-    modules
+    apidoc/modules
     updating_docs
     glossary
 
