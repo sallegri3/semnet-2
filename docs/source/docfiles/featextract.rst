@@ -12,7 +12,7 @@ When characterizing the relationship between a pair of nodes in the graph, we fi
 
 .. image:: ../_static/feature_extraction.png
 
-In addition to counts, we can compute two additional metrics - :term:`degree-weighted path count` (DWPC) and :term:`HeteSim`. Both of these features are designed to counteract the bias that highly connected nodes cause in the network. 
+In addition to counts, we can compute two additional metrics - :term:`degree-weighted path count` (DWPC) and :term:`HeteSim`. Both of these features are designed to counteract the bias that highly connected nodes cause in the network.
 
 Usage
 -----
