@@ -22,10 +22,23 @@ def get_metapath_abbrev(query_result):
 	return str(mp)
 
 def neo4j_rels_as_metapath(edge_types, node_types):
-	""" Converts a list of typed relationship formats from Neo4j
-	(e.g. 'TREATS_ORCHtrtsDSYN') to a MetaPath (e.g. ORCHtrts>DSYN).
-	Note, directionality may be compromised when two sequential 
-	nodes have the same type."""
+	""" Converts lists of edge and node types to a ``hetio.hetnet.MetaPath`` object.
+
+	Uses regular expressions to capture the appreviation at the end of the edge type and insert directionality symbol. Using this method, a list of strings formatted as ``TREATS_ORCHtreatsDSYN`` in Neo4j become MetaPath objects. Note, directionality may become compromised when two sequential nodes have the same type.
+	
+	Parameters
+	----------
+	edge_types: array_like
+		A sequence of edge type strings.
+	node_types: array_like
+		A sequence of node type strings.
+
+	Returns
+	-------
+	metapath: hetio.hetnet.MetaPath
+		A MetaPath object that represents the sequence of nodes and edges.
+		
+	"""
 
 	# Capture the abbreviation at the end of the edge type
 	abbrevs = [re.split('_(?=[A-Z])', e)[-1] for e in edge_types]
