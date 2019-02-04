@@ -1,11 +1,11 @@
+"""
+Converts data from the Neo4j database into a format compatible with manipulation
+in hetio. Hetio provides simple operations on the metagraph.
+"""
+
 import re
 import hetio.readwrite
 
-
-"""
-Converts data from the neo4j database into a format compatible with 
-manipulation in hetio
-"""
 
 """ Load the metagraph. """
 path = '../semnet/data/sem-net-mg_hetiofmt.json.gz'
@@ -13,7 +13,24 @@ metagraph = hetio.readwrite.read_metagraph(path)
 
 
 def get_metapath_abbrev(query_result):
-	""" Creates a string abbreviation to label query results """
+	""" 
+	Creates a string abbreviation to label query results.
+
+	Converts a dictionary of an individual Neo4j query results into a simplified
+	and unique string representation.
+
+	Parameters
+	----------
+	query_result: dict
+		The result of a query for metapaths between a source and target node.
+
+	Returns
+	-------
+	metapath: str
+		A string representation of the metapath, which we use to refer to it 
+		throughout semnet.
+
+	"""
 
 	node_types = query_result['nodes']
 	edge_types = query_result['edges']
@@ -22,22 +39,28 @@ def get_metapath_abbrev(query_result):
 	return str(mp)
 
 def neo4j_rels_as_metapath(edge_types, node_types):
-	""" Converts lists of edge and node types to a ``hetio.hetnet.MetaPath`` object.
+	""" 
+	Converts lists of edge and node types to a ``hetio.hetnet.MetaPath`` object.
 
-	Uses regular expressions to capture the appreviation at the end of the edge type and insert directionality symbol. Using this method, a list of strings formatted as ``TREATS_ORCHtreatsDSYN`` in Neo4j become MetaPath objects. Note, directionality may become compromised when two sequential nodes have the same type.
-	
+	Uses regular expressions to capture the appreviation at the end of the edge
+	type and insert directionality symbol. Using this method, a list of strings
+	formatted as ``TREATS_ORCHtreatsDSYN`` in Neo4j become MetaPath objects.
+	Note, directionality may become compromised when two sequential nodes have
+	the same type.
+
 	Parameters
 	----------
-	edge_types: array_like
-		A sequence of edge type strings.
-	node_types: array_like
+	edge_types: array_like 
+		A sequence of edge type strings. 
+	
+	node_types: array_like 
 		A sequence of node type strings.
 
 	Returns
 	-------
-	metapath: hetio.hetnet.MetaPath
+	metapath: hetio.hetnet.MetaPath 
 		A MetaPath object that represents the sequence of nodes and edges.
-		
+
 	"""
 
 	# Capture the abbreviation at the end of the edge type

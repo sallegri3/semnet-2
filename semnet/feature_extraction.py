@@ -1,3 +1,10 @@
+"""
+This module implements two feature extractors that wrap the py2neo.Graph class.
+When objects are constructed, they initiate a connection to the locally hosted
+Neo4j instance. Given pairs of nodes, feature extractors compute a
+representation of the metapaths between them.
+"""
+
 import xarray as xr
 import numpy as np
 from collections import Counter
@@ -10,20 +17,41 @@ from py2neo import Graph
 from semnet.neo4j import build_metapath_query, execute_multithread_query
 from semnet.conversion import get_metapath_abbrev
 
-"""
-This module implements three feature extractors that wrap the py2neo.Graph class.
-When objects are constructed, they initiate a connection to the locally hosted 
-Neo4j instance. Given pairs of nodes, feature extractors compute a representation
-of the metapaths between them.
-"""
-
 class BaseFeatureExtractor(object):
-	""" Defines the basic functions of a feature extractor """
+	""" 
+	Defines the basic functions of a feature extractor. You'll have to customize
+	the password in the ``__init__`` function to your own database.
+	"""
+
 	def __init__(self):
 		self.graph = Graph(password='j@ck3t5_m1tch311')
 		
 	def results_to_dataarray(self, sources, targets, results, metric):
-		""" Converts the results array of dicts into the structured xr.DataArray format """
+		""" 
+		Converts the results array of dicts into the structured ``xr.DataArray``
+		format.
+
+		Uses the sources, targets, metapaths, and feature type to construct a 
+		labeled, multi-dimensional data structure that supports named axes.
+
+		Parameters
+		----------
+		    sources: list of str
+				A list of strings containing the CUI's of source nodes.
+
+		    targets: list of str
+				A list of strings containing the CUI's of target nodes.
+
+		    results: list of dict
+				A list of dicts containing the results of the Cypher query.
+
+		    metric: 'counts' or 'dwpc'
+				The name of the metric that was computed by the query.
+		Returns
+		-------
+			data: xarray.DataArray
+				A multi-dimensional, labeled array that contains the feature data.
+		"""
 		
 		s2ix = {s:ix for ix, s in enumerate(sorted(set(sources)))}
 		t2ix = {t:ix for ix, t in enumerate(sorted(set(targets)))}
