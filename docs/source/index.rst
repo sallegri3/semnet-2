@@ -15,6 +15,22 @@ hosted `Neo4j`_ database (`node types`_, `edge types`_)
     ``semnet`` directory, and use ``pip install .``. You should then be able to
     ``import semnet`` and use it.
 
+Table of Contents
+^^^^^^^^^^^^^^^^^
+
+.. toctree::
+    :maxdepth: 1
+
+    about_us
+    about_data
+    setup
+    docfiles/featextract
+    docfiles/computation
+    docfiles/utilities
+    apidoc/modules
+    updating_docs
+    glossary
+
 Features
 ^^^^^^^^
 
@@ -48,17 +64,6 @@ Citations
     * Wang, Chenguang, et al. "Relsim: relation similarity search in schema-rich heterogeneous information networks." Proceedings of the 2016 SIAM International Conference on Data Mining. Society for Industrial and Applied Mathematics, 2016.
     * Yu, Xiao, et al. "User guided entity similarity search using meta-path selection in heterogeneous information networks." Proceedings of the 21st ACM international conference on Information and knowledge management. Acm, 2012.
 
-.. toctree::
-
-    about_us
-    about_data
-    setup
-    docfiles/featextract
-    docfiles/computation
-    docfiles/utilities
-    apidoc/modules
-    updating_docs
-    glossary
 
 
 Indices and tables
