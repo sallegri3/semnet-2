@@ -1,9 +1,9 @@
 """
-This module implements a metapath-based similarity metric, HeteSim.
+This module implements a metapath-based similarity metric known as
+:term:`HeteSim`. It is commonly used for computing similarity between nodes in
+heterogeneous information networks. Please see Shi et al. 2014 [#]_ for more details.
 
-Shi, Chuan, et al. "HeteSim: A General Framework for Relevance 
-Measure in Heterogeneous Networks." IEEE Trans. Knowl. Data Eng. 
-6.10 (2014): 2479-2492.
+.. [#] Shi, Chuan, et al. "HeteSim: A General Framework for Relevance Measure in Heterogeneous Networks." IEEE Trans. Knowl. Data Eng. 6.10 (2014): 2479-2492.
 """
 
 import gzip
@@ -25,9 +25,27 @@ metagraph = hetio.readwrite.read_metagraph(path)
 
 
 def get_neighbors(sources, edge, graph):
-	"""Generates a Cypher query to find the neighbors of a 
-	source node along a given edge. CUI's are used to identify 
-	nodes to save memory. The function returns a list of CUI's."""
+	"""Generates a Cypher query and uses it to find the neighbors of a set of
+	sources node along a given edge. 
+	
+	Parameters
+	----------
+	sources: list of str
+		A list of source CUI's.
+
+	edge: str
+		A string representation of the edge predicate. See the :ref:`Data` 
+		section for an example of the ``predicate`` edge field.
+
+	graph: py2neo.Graph
+		A Graph object connected to a locally hosted instance of the Neo4j 
+		database.
+
+	Returns
+	-------
+		neighbors_list: list of lists of str
+			A list of the CUI's of neighbors of the source along the given edge.
+	"""
 
 	assert isinstance(sources, list)
 
@@ -56,7 +74,23 @@ def get_neighbors(sources, edge, graph):
 
 
 def neighbors_to_tp_df(source_list, target_list):
-	"""Turns a list of results into a sorted transition probability DataFrame"""
+	"""
+	Turns a list of results into a sorted transition probability dataframe.
+	
+	Parameters
+	----------
+		source_list: list of str
+			A list of source nodes.
+
+		target_list: list of list of str
+			A list of the neighbors of each node in ``source_list``.
+
+	Returns
+	-------
+		df: pd.DataFrame
+			A dataframe of transition probabilities from source node to 
+			each target node.
+	"""
 
 	# Compute appropriate indices for data matrix and DataFrame
 	source_nodes = sorted(source_list)
@@ -84,9 +118,24 @@ def neighbors_to_tp_df(source_list, target_list):
 
 
 def decompose_along_edges(u_xy, revers=False):
-	""" Moves each nonzero to its own column, labeled with 'SOURCE_TARGET' 
-	(in direction of metapath). Reversed indicates the direction of metapath 
-	traversal, which allows indices to match up when multiplying DataFrames"""
+	""" 
+	Moves each nonzero entry in u_xy to its own column, labeled with 'SOURCE_TARGET' 
+	(in direction of metapath).
+
+	Parameters
+	----------
+		u_xy: pd.DataFrame
+			An input dataframe.
+		
+		revers: boolean
+			Indicates the direction of metapath traversal, which allows indices 
+			to match up when multiplying dataframes.
+
+	Returns
+	-------
+		u_xe: pd.DataFrame
+			The input dataframe with each nonzero entry in its own column.
+	"""
 
 	u_xe = pd.DataFrame()
 
@@ -119,8 +168,27 @@ def decompose_along_edges(u_xy, revers=False):
 
 
 def reconcile_inner_dims(u1, u2):
-	""" Add the missing columns to each DataFrame and re-sort them so their 
-	values are aligned """
+	""" 
+	Add the missing columns to each DataFrame and re-sort them so their 
+	new columns are the sorted union of previous two sets of columns. 
+
+	Parameters
+	----------
+		u1: pd.DataFrame
+			An input dataframe.
+		
+		u2: pd.DataFrame
+			A second input dataframe.
+
+	Returns
+	-------
+		u1: pd.DataFrame
+			The input dataframe with reconciled columns.
+
+		u2: pd.DataFrame
+			The input dataframe with reconciled columns.
+	
+	"""
 
 	missing_cols = u2.columns[[not i for i in u2.columns.isin(u1.columns)]]
 	for col in missing_cols:
@@ -136,8 +204,31 @@ def reconcile_inner_dims(u1, u2):
 	
 
 def compute_mp_hetesim(source_list, target_list, metapath, graph):
-	""" Computes normalized HeteSim scores between a list of sources and a 
-	list of targets along a given metapath """
+	"""
+	A helper function that computes normalized HeteSim scores between a 
+	list of sources and a list of targets along a given metapath. 
+	
+	Parameters
+	----------
+		source_list: list of str
+			A list of source CUI's.
+
+		target_list: list of str
+			A list of target CUI's.
+
+		metapath: str
+			A string representation of the metapath of interest.
+
+		graph: py2neo.Graph
+		A Graph object connected to a locally hosted instance of the Neo4j 
+		database.
+
+	Returns
+	-------
+		hetesim_mat: np.array
+			An array of metapath-normalized HeteSim scores between sets 
+			of sources and targets for a given metapath.
+	"""
 
 	mp_len = len(metapath)
 	num_trans_probs = mp_len if not mp_len % 2 else mp_len + 1
@@ -184,9 +275,51 @@ def compute_mp_hetesim(source_list, target_list, metapath, graph):
 	
 	return hetesim_mat
 
-def compute_all_hetesim(source_list, target_list, metapath_list, graph, rf_int=None, workers=40):
-	""" Compute all hetesim metrics along a set of metapaths for a set of source
-	and target entities	"""
+def compute_all_hetesim(source_list, target_list, metapath_list, graph, workers=40):
+	"""
+	Compute all HeteSim metrics along a set of metapaths for a set of source and
+	target entities.
+
+	Distributes lists of sources, targets, and metapaths to Cypher queries to
+	count metapaths for all examples in parallel. Returns a structured
+	representation of the results. While the feature extractors in
+	:mod:`semnet.feature_extraction` count node pairs in parallel, this
+	function computes scores along a given metapath in parallel.
+
+	The details of the complete algorithm are best found in Shi et al. 2014 (above). 
+	Essentially, this function and its helpers work by:
+
+	1. Splitting the metapath list amongst parallel queries
+	2. For each metapath, computing forward and reverse transition probability matrices.
+	3. Reconciling indices of the innermost transition probability matrices.
+	4. Multiplying everything out to end up with a matrix of HeteSim scores.
+
+	.. note:: This is the function that will typically be called by the user.
+
+	Parameters
+	----------
+		source_list: list of str
+			A list of source CUI's.
+
+		target_list: list of str
+			A list of target CUI's.
+
+		metapath_list: list of str
+			A list of metapaths between the source and target nodes.
+
+		graph: py2neo.Graph
+			A Graph object connected to a locally hosted instance of the Neo4j 
+			database.
+
+		workers: int
+			The number of workers desired for parallel computation.
+
+	Returns
+	-------
+		data: xarray.DataArray
+			A 3-D data structure containing the metapath strings and HeteSim scores 
+			for each source-target pair.
+	"""
 
 	params = []
 	source_list = sorted(source_list)
@@ -201,10 +334,36 @@ def compute_all_hetesim(source_list, target_list, metapath_list, graph, rf_int=N
 
 	result = execute_multithread_query(compute_mp_hetesim, params=params, workers=workers)
 
-	return hetesim_results_to_xr(result, source_list, target_list, metapath_list, rf_int)
+	return hetesim_results_to_xr(result, source_list, target_list, metapath_list)
 
-def hetesim_results_to_xr(results, source_list, target_list, metapath_list, rf_int):
-	""" Converts the list of results into a more structured format """
+def hetesim_results_to_xr(source_list, target_list, results, metapath_list):
+	""" 
+    Converts the results array of dicts into the structured ``xr.DataArray``
+    format.
+
+    Uses the sources, targets, metapaths, and feature type to construct a 
+    labeled, multi-dimensional data structure that supports named axes.
+
+    Parameters
+    ----------
+        source_list: list of str
+          A list of strings containing the CUI's of source nodes.
+
+        target_list: list of str
+          A list of strings containing the CUI's of target nodes.
+
+        results: list of dict
+          A list of dicts containing the results of the Cypher query.
+
+        metapath_list: list of str
+          The list of metapaths corresponding to the features calculated.
+
+    Returns
+    -------
+      data: xarray.DataArray
+        A multi-dimensional, labeled array that contains the feature data.
+    """
+
 	data = np.array(results)
 	data = np.swapaxes(np.swapaxes(results, 0, 2), 0, 1)
 
@@ -214,5 +373,5 @@ def hetesim_results_to_xr(results, source_list, target_list, metapath_list, rf_i
 	return xr.DataArray(data, 
 						coords=[source_list, target_list, metapath_list],
 						dims=['source', 'target', 'metapath'],
-						attrs={'feature': 'hetesim', 'relevance':rf_int, 
-								's_type':s_type, 't_type':t_type})
+						attrs={'feature': 'hetesim', 's_type':s_type, 
+						't_type':t_type})
