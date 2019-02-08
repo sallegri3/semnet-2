@@ -1,19 +1,9 @@
 '''
-This module implements a metapath-based ranking model that selects 
-a feature subset, computes weights, and ranks a given set of entities.
+This module is intended to generate rankers for pairs of nodes that exemplify the relationships extracted using :mod:`semnet.lsr`. We implement a metapath-based ranking model that selects a feature subset and computes weights to rank a set of entities. It is based on work by Yu et al. 2012 [1]_.
 
-For the first pass, a ranking model trained on drug-disease pairs was
-used to rank treatments for Alzheimer's disease.
-
-@author: Andrew Sedler
-@date: July 2, 2018
-
-Reference: 
-Yu, Xiao, et al. "User guided entity similarity search using meta-path 
-selection in heterogeneous information networks." Proceedings of the 
-21st ACM international conference on Information and knowledge management. 
-Acm, 2012.
+.. [1] Yu, Xiao, et al. "User guided entity similarity search using meta-path selection in heterogeneous information networks." Proceedings of the 21st ACM international conference on Information and knowledge management. ACM, 2012.
 '''
+
 from collections import defaultdict
 import math
 import numpy as np
@@ -29,9 +19,17 @@ def get_ranking_correlation(pos_feature_dicts, neg_feature_dicts):
 	ranking coefficient because it provided more intiuitive results and 
 	showed a nicer distibution.
 
+
 	The code assumes that query_pairs contains an array of tuples, the first 
 	half of which contains positive pairs and the second half of which 
 	contains negative pairs.
+
+	Parameters
+	----------
+		pos_feature_dicts
+		neg_feature_dicts
+	Returns
+	-------
 	'''
 
 	# Use defaultdicts to allow comparison
@@ -71,10 +69,9 @@ def get_ranking_correlation(pos_feature_dicts, neg_feature_dicts):
 
 def select_features(rank_corr_dict):
 	'''
-	Selects all features that predict with Kendall's tau > 0.2
+	Selects all features that predict with Kendall's tau > 0.2. This function must be used first 
 
-	In the future, will select features for the ranking model using an 
-	entropy-based histogram thresholding method.
+	.. todo:: In the future, may want to select features for the ranking model using an entropy-based histogram thresholding method.
 	'''
 
 	return {mp: tau for mp, tau in rank_corr_dict.items() if tau > 0.2}
@@ -83,6 +80,13 @@ def learn_ranking_model(top_features, feature_dicts, seed=1):
 	'''
 	This function maximizes a sum of per-query objective functions and returns
 	a set of weighted metapaths.
+
+	We can then:
+	This function ranks a set of query pairs based on their agreement with the
+	learned ranking coefficients.
+
+	.. note:: This is the main function in this module.
+
 	'''
 	np.random.seed(seed)
 
@@ -131,13 +135,3 @@ def learn_ranking_model(top_features, feature_dicts, seed=1):
 	ranking_model = {mp:weight for mp, weight in zip(sorted(mp2ix.keys()), result.x)}
 
 	return ranking_model
-
-
-def rank(query_pairs, feature_dicts, rank_coeff_dict):
-	'''
-	This function ranks a set of query pairs based on their agreement with the
-	learned ranking coefficients.
-	'''
-
-
-	raise NotImplementedError

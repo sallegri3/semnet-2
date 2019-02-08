@@ -1,5 +1,5 @@
 """
-Constructs queries compatible with Neo4j and submits multithreaded jobs using ``concurrent.futures``. 
+Constructs queries compatible with Neo4j and submits multithreaded jobs using ``concurrent.futures``. These functions will not typically be called directly by the user, but are used by the :mod:`semnet.feature_extraction` classes.
 """
 
 import pickle
@@ -31,7 +31,7 @@ def build_metapath_query(source, target, d):
 	Returns
 	-------
 		query: str
-			A query string that tells Neo4j to return all metapaths between ``source`` and ``target`` nodes.
+			A Cypher query string that tells Neo4j to return all metapaths between ``source`` and ``target`` nodes.
 	"""
 
 	q = """
@@ -69,7 +69,7 @@ def execute_multithread_query(func, params, workers=40):
 			A list of different parameter sets to be applied to the function.
 
 		workers: int
-        	The number of workers desired for parallel computation.
+			The number of workers desired for parallel computation.
 
 	Returns
 	-------

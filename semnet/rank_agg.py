@@ -1,9 +1,11 @@
 """
-This module implements a modified version of rank aggregation described in:
+This module implements an unsupervised rank aggregation method [1]_ for use with the :mod:`semnet.feature_extraction` and :mod:`semnet.hetesim` modules. It is based
+on the idea that each metapath score is an independent ranker of the source
+nodes. The metapath rankers are weighted based on their agreement with the
+consensus ranking, and then used to compute an aggregate score and corresponding
+ranking for each source node.
 
-Klementiev, Alexandre, Dan Roth, and Kevin Small. "An unsupervised learning 
-algorithm for rank aggregation." European Conference on Machine Learning. 
-Springer, Berlin, Heidelberg, 2007.
+.. [1] Klementiev, Alexandre, Dan Roth, and Kevin Small. "An unsupervised learning algorithm for rank aggregation." European Conference on Machine Learning. Springer, Berlin, Heidelberg, 2007.
 """
 
 import numpy as np
@@ -12,12 +14,22 @@ import xarray as xr
 
 class UnsupervisedRankAggregator(object):
 	"""
-	This class implements the rank aggregation methods described by 
-	Klementiev et al. 2007. It wraps a xr.DataArray object for data 
-	management.
+	This class implements the rank aggregation methods described by Klementiev
+	[1]_. It wraps a xr.DataArray object for data management.
+
+	Parameters
+	----------
+		data_array: xarray.DataArray
+			A dataarray output from one of the feature exraction outputs.
+
+		cui2name: dict
+			A dictionary that converts CUI in the dataarray back into verbose descriptions.
 	"""
+
 	def __init__(self, data_array, cui2name):
-		""" Initializes the URA using characteristics of the xr.DataArray """
+		"""
+		Initializes the URA using characteristics of the xr.DataArray.
+		"""
 		assert isinstance(data_array, xr.DataArray), 'Constructor requires xr.DataArray.'
 
 		self.data_array = data_array
@@ -34,8 +46,30 @@ class UnsupervisedRankAggregator(object):
 
 
 	def aggregate(self, metric, target, lambd=1, theta=500):
-		""" Learn weights that prioritize features that agree with the mean rank. Implements
-		the additive aggregation method described by Klementiev. """
+		""" 
+		Learn weights that prioritize features that agree with the mean rank. Implements
+		the additive aggregation method described by Klementiev. 
+
+		.. note:: This is the main function in this module.
+		
+		Parameters
+		----------
+			metric: 'count', 'dwpc', or 'hetesim'
+				The metric to be used for rank aggregation.
+			
+			target: str
+				The CUI of the ranking target.
+			
+			lambd: 
+				The learning rate.
+			
+			theta: 
+				A hyperparameter. "For some items, only a small fraction of the ranking functions return a valid rank. If less than :math:`\\theta` rankers, as defined by the user, return a valid rank for an item, the information is deemed untrustworthy and no updates are made for this item" [1]_.
+		Returns
+		-------
+			mp_wts:
+				Metapath weights for the learned ranker.
+		"""
 
 		# Check that target and metric are valid and store them in memory
 		assert metric in self.metrics, 'Metric is invalid: %r' % metric
@@ -106,9 +140,30 @@ class UnsupervisedRankAggregator(object):
 
 
 def rank_by_feature(all_data, target, metric):
-	""" This function assigns each item a natural number ranking by feature, 
+	""" 
+	This helper function assigns each item a natural number ranking by feature, 
 	based on feature values. Ties are resolved by giving both numbers the highest
-	possible rank. Thresholds are set to exclude items with zero-valued features. """
+	possible rank. Thresholds are set to exclude items with zero-valued features. 
+	
+	Parameters
+	----------
+		all_data: xarray.DataArray
+			A dataarray containing feature extractor data
+
+		target: str
+			The CUI of the node we would like to rank with respect to.
+
+		metric: 'count', 'dwpc', or 'hetesim'
+			The metric to be used for rank aggregation.
+
+	Returns
+	-------
+		rankings: np.array
+			A 2-D ``numpy`` array of integer rankings of source nodes with respect to the target.
+
+		thresholds: list
+			A list of the lowest ranks.
+	"""
 
 	rankings = []
 	thresholds = []

@@ -1,11 +1,11 @@
+"""
+These utility functions were used for generating negative examples that help denoise LSR's for the :mod:`semnet.lsr` module.
+"""
+
 import numpy as np
 import pickle
 import gzip
 import random
-
-"""
-Functions for generating negative examples that help denoise LSRs
-"""
 
 """ Load dictionaries that help keep track of names and types """
 with gzip.open('../semnet/data/name2type.pkl.gz', 'rb') as file:
@@ -15,8 +15,28 @@ with gzip.open('../semnet/data/type2names.pkl.gz', 'rb') as file:
 
 
 def get_negative_examples(examples, hold=None, seed=None):
-	"""Chooses random pairs of nodes of the same type as 
-	negative examples"""
+	"""
+	Randomly replaces either the source or the target node of the training example with another node of the same type in the network.
+
+	.. warning:: This function didn't end up working very well because the random replacement was typically not well connected with the example node that wasn't replaced. 
+
+	Parameters
+	----------
+		examples: list of str pairs
+			A list of lenth-2 lists of CUI strings. These example pairs are chosen manually by the user.
+
+		hold: str, 's' or 't'
+			A character that determines whether the source or the target is held constant.
+
+		seed: int
+			The random seed for choosing the example pairs.
+
+	Returns
+	-------
+		neg_ex: list of str pairs
+			A list of length-2 lists of strings. Each of these example pairs has one node from the example set and one node chosen randomly from the graph.
+	"""
+
 	if seed:
 		np.random.seed(seed)
 
@@ -43,7 +63,28 @@ def get_negative_examples(examples, hold=None, seed=None):
 	return neg_ex
 
 def generate_negative_examples(examples, hold=None, seed=None):
-	""" Randomly shuffles example pairs """
+	"""
+	Randomly shuffles example pairs. 
+
+	.. note:: This function is more recent.
+	
+	Parameters
+	----------
+		examples: list of str pairs
+			A list of lenth-2 lists of CUI strings. These example pairs are chosen manually by the user.
+
+		hold: str, 's' or 't'
+			A character that determines whether the source or the target is held constant.
+
+		seed: int
+			The random seed for choosing the example pairs.
+
+	Returns
+	-------
+		neg_ex: list of str pairs
+			A list of length-2 lists of strings. Each of these example nodes has been re-paired with another node from the example set.=
+	"""
+
 	if seed:
 		random.seed(seed)
 
