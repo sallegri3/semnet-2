@@ -59,6 +59,3 @@ def generate_negative_examples(examples, hold=None, seed=None):
 		random.shuffle(neg_ex[1])
 
 	return list(map(list, zip(*neg_ex)))
-
-
-

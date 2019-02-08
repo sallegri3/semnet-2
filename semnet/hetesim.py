@@ -25,7 +25,8 @@ metagraph = hetio.readwrite.read_metagraph(path)
 
 
 def get_neighbors(sources, edge, graph):
-	"""Generates a Cypher query and uses it to find the neighbors of a set of
+	"""
+	Generates a Cypher query and uses it to find the neighbors of a set of
 	sources node along a given edge. 
 	
 	Parameters
