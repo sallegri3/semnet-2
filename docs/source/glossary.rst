@@ -15,7 +15,7 @@ Glossary
     metapaths
         Sequences of node and relationship types between source and target nodes.
 
-    degree-weighted path count
+    degree-weighted path counts
         A metapath-based feature that downweights highly connected nodes. It is derived from Himmelstein et. al. 2015 [#]_.
 
     HeteSim
