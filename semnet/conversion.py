@@ -29,7 +29,6 @@ def get_metapath_abbrev(query_result):
 	metapath: str
 		A string representation of the metapath, which we use to refer to it 
 		throughout semnet.
-
 	"""
 
 	node_types = query_result['nodes']
@@ -60,7 +59,6 @@ def neo4j_rels_as_metapath(edge_types, node_types):
 	-------
 	metapath: hetio.hetnet.MetaPath 
 		A MetaPath object that represents the sequence of nodes and edges.
-
 	"""
 
 	# Capture the abbreviation at the end of the edge type

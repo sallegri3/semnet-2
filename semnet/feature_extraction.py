@@ -119,6 +119,8 @@ class CountExtractor(BaseFeatureExtractor):
     metapaths for all examples in parallel. Returns a structured representation
     of the results.
 
+    .. note:: This is the function that will typically be called by the user.
+
     Parameters
     ----------
       sources: list of str
@@ -255,6 +257,8 @@ class DwpcExtractor(BaseFeatureExtractor):
     Distributes a list of sources and targets to Cypher queries to count
     metapaths for all examples in parallel. Returns a structured representation
     of the results.
+
+    .. note:: This is the function that will typically be called by the user.
 
     Parameters
     ----------
