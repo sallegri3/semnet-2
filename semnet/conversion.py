@@ -8,7 +8,11 @@ import hetio.readwrite
 
 
 """ Load the metagraph. """
-path = '../semnet/data/sem-net-mg_hetiofmt.json.gz'
+import os
+import sys
+path = os.path.abspath('data/sem-net-mg_hetiofmt.json.gz')
+
+#path = '../semnet/data/sem-net-mg_hetiofmt.json.gz'
 metagraph = hetio.readwrite.read_metagraph(path)
 
 
