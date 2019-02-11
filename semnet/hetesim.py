@@ -20,7 +20,9 @@ import hetio.readwrite
 from semnet.neo4j import execute_multithread_query
 
 # Load the metagraph and fetch the metapath
-path = '../semnet/data/sem-net-mg_hetiofmt.json.gz'
+import os
+_ROOT = os.path.abspath(os.path.dirname(__file__))
+path = os.path.join(_ROOT, 'data/sem-net-mg_hetiofmt.json.gz')
 metagraph = hetio.readwrite.read_metagraph(path)
 
 
@@ -50,7 +52,8 @@ def get_neighbors(sources, edge, graph):
 
 	assert isinstance(sources, list)
 
-	with gzip.open('../semnet/data/cui2type.pkl.gz', 'rb') as file:
+	path = os.path.join(_ROOT, 'data/cui2type.pkl.gz')
+	with gzip.open(path, 'rb') as file:
 		convert2type = pickle.load(file)
 
 	neighbors_list = []
