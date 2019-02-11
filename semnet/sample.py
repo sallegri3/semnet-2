@@ -7,9 +7,10 @@ import pickle
 import gzip
 import random
 
-""" Load dictionaries that help keep track of names and types """
 import os
 _ROOT = os.path.abspath(os.path.dirname(__file__))
+
+""" Load dictionaries that help keep track of names and types """
 path = os.path.join(_ROOT, 'data/name2type.pkl.gz')
 with gzip.open(path, 'rb') as file:
    	name2type = pickle.load(file)

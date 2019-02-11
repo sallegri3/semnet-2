@@ -10,6 +10,8 @@ from tqdm import tqdm_notebook
 # Avoid set size change warning
 tqdm_notebook.monitor_interval=0
 import copy
+import os
+_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 from semnet.conversion import get_metapath_abbrev
 
@@ -41,7 +43,8 @@ def build_metapath_query(source, target, d):
 		extract(b in relationships(path) | b.predicate ) as edges 
 		"""
     
-	with gzip.open('../semnet/data/cui2type.pkl.gz', 'rb') as file:
+	path = os.path.join(_ROOT, 'data/cui2type.pkl.gz')
+	with gzip.open(path, 'rb') as file:
 		convert2type = pickle.load(file)
 
 	s_type = convert2type[source]
