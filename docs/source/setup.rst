@@ -7,7 +7,7 @@ If you haven't installed Anaconda on your machine, we recommend doing this first
 
 After installing Anaconda, we recommend setting up an environment for working with SemNet. You can do this by opening up the Anaconda prompt and entering ``conda create -name semnet-env python``. More information on managing environments can be found in the `conda environments documentation`_.
 
-Next, you will need to download a copy of SemNet from GitHub. You can do this by cloning the repository to whatever location you prefer (we recommend ``Downloads``, unless you are planning on modifying the code). Then, you'll want to switch to your newly created ``conda`` environment and install ``semnet`` using ``pip``. We summarize the Anaconda prompt input below:
+Next, you will need to download a copy of SemNet from GitHub. You can do this by cloning the repository to whatever location you prefer (we recommend ``Downloads``, unless you are planning on modifying the code). Then, you'll want to switch to your newly created ``conda`` environment and install ``semnet`` using ``pip``. Dependencies should install automatically. We summarize the Anaconda prompt input below:
 
 .. code-block:: bash
 
