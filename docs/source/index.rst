@@ -15,22 +15,6 @@ hosted `Neo4j`_ database (`node types`_, `edge types`_)
     ``semnet`` directory, and use ``pip install .``. You should then be able to
     ``import semnet`` and use it.
 
-Table of Contents
-^^^^^^^^^^^^^^^^^
-
-.. toctree::
-    :maxdepth: 1
-
-    about_us
-    about_data
-    setup
-    docfiles/featextract
-    docfiles/computation
-    docfiles/utilities
-    apidoc/modules
-    updating_docs
-    glossary
-
 Features
 ^^^^^^^^
 
@@ -72,6 +56,19 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. toctree::
+    :hidden:
+
+    about_us
+    about_data
+    setup
+    featextract
+    ranking
+    latent
+    apidoc/modules
+    updating_docs
+    glossary
 
 .. _network: https://skr3.nlm.nih.gov/SemMedDB/index.html
 .. _Neo4j: https://neo4j.com/

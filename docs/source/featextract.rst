@@ -10,7 +10,7 @@ We can represent each pair of nodes in the biomedical concept graph in terms of 
 
 When characterizing the relationship between a pair of nodes in the graph, we first find the set of metapaths between the two nodes. Then, for each of these metapaths, we compute a feature value. The simplest example of a metapath-based feature is simply the total number of paths associated with that metapath. We have created classes and functions for extracting three types of metapath-based features from the graph.
 
-.. image:: ../_static/feature_extraction.png
+.. image:: _static/feature_extraction.png
 
 In addition to counts, we can compute two additional metrics - :term:`degree-weighted path counts` (DWPC) and :term:`HeteSim`. Both of these features are designed to counteract the bias that highly connected nodes cause in the network.
 
