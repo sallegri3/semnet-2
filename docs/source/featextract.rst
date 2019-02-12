@@ -1,3 +1,5 @@
+.. _FeatExtract:
+
 Feature Extraction
 ==================
 
