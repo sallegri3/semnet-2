@@ -1,5 +1,5 @@
-SemNet AutoDocs
-===============
+SemNet Docs
+===========
 
 .. toctree::
    :maxdepth: 4
