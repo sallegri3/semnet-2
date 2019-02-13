@@ -5,6 +5,8 @@ Data Details
 
 SemNet is a Python package for extracting insights from semantic networks. It was built around semantic predication data from the `Semantic MEDLINE Database`_ (SemMedDB). This data consists of nearly 100 million subject-predicate-object triples extracted from all PubMed citations (about 28 million as of December 2017) using string similarity techniques. To get a feel for the type of data we are working with, check out these lists of `node types`_ (found in subjects and objects) and `edge types`_ (found in predicates). Keep in mind that each node has an identity and a type, and that these are distinct. An example of a node type might be “Amino Acid, Peptide, or Protein”, while its identity might be “amyloid-:math:`\beta`”.
 
+.. image:: _static/relation_extraction.png
+
 The PREDICATIONS table from SemMedDB (VER31R, processed up to December 31, 2017) was `downloaded`_ in May 2018. To allow more efficient neighbor queries, it was modified from its original form and imported into a Neo4j graph database. Specifically, we started by aggregating the 100 million predications down to about 20 million unique predications. For each unique predication, we recorded the number of times it was found (edge weight) and the PMID’s of the source citations. We also added the abbreviations of source and target node types to the edge types to save query time. Finally, for each unique node we recorded the number of times each node was referred to by different types, recorded types and counts, and assigned the most common type to each node. Edge labels referred to the most common node type for each node.
 
 Node Data Fields
