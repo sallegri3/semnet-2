@@ -12,7 +12,7 @@ Usage
 Aggregating Ranks
 ^^^^^^^^^^^^^^^^^
 
-We use :class:`semnet.rank_agg.UnsupervisedRankAggregator` to produce rankings of source nodes with respect to target nodes. Each object has an associated ``xarray.DataArray`` dataset (here, ``hs_data``) from the feature extraction step and a ``cui2name`` dictionary. The associated function, ``aggregate``, turns feature scores into rankings and finds the optimal linear weights for individual rankers to produce the final aggregate ranking. The end result is a ``pandas.Series`` of ranked CUI's, which we typically convert into their verbose form.
+We use :class:`semnet.rank_agg.UnsupervisedRankAggregator` to produce rankings of source nodes with respect to target nodes. Each object has an associated ``xarray.DataArray`` dataset (here, ``hs_data``) from the feature extraction step and a ``cui2name`` dictionary. The associated function, ``aggregate``, turns feature scores into rankings and finds the optimal linear weights for individual rankers to produce the final aggregate ranking. The end result is a ``pandas.Series`` of ranked CUI's, which we typically convert into their verbose form. The necessary data for defining ``cui2name`` can be found in the ``all_nodes.tsv.gz`` data file in SemNet.
 
 .. code-block:: python
 
@@ -24,8 +24,6 @@ We use :class:`semnet.rank_agg.UnsupervisedRankAggregator` to produce rankings o
     hs_scores = np.dot(hs_ura.rankings, hs_ura.weights)
     hs_scores = {cui:score for cui, score in zip(hs_ura.sources, hs_scores)}
     hs_ranks = pd.Series(hs_scores).rank(method='dense')
-
-.. note:: The necessary data for defining ``cui2name`` can be found in the ``all_nodes.tsv.gz`` data file in SemNet.
 
 .. warning:: Output from the HeteSim function does not currently include the ``metric`` dimension, which is expected by ``UnsupervisedRankAggregator``. It can be added using:
 
@@ -65,7 +63,7 @@ A ranking correlation heatmap can be useful for quantifying the agreement betwee
 .. code-block:: python
 
     from scipy.stats import kendalltau
-    
+
     # Producing a ranking correlation heatmap
 
     # Compute standard correlation
@@ -81,8 +79,8 @@ A ranking correlation heatmap can be useful for quantifying the agreement betwee
         for j, j_col in enumerate(all_hs_ranks):
             vec[j_col] = kendalltau(all_hs_ranks[i_col], all_hs_ranks[j_col])[0]
         kendall_df[i_col] = pd.Series(vec)
-    sns.heatmap(kendall_df, vmax=1, vmin=0, 
-                annot=True, fmt=".2f", 
+    sns.heatmap(kendall_df, vmax=1, vmin=0,
+                annot=True, fmt=".2f",
                 linewidths=.5, mask=mask)
     plt.xticks(rotation=45, ha='right')
     plt.savefig('hs_rankings_corr.png', bbox_inches='tight')
