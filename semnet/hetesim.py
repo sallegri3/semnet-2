@@ -338,7 +338,7 @@ def compute_all_hetesim(source_list, target_list, metapath_list, graph, workers=
 
 	result = execute_multithread_query(compute_mp_hetesim, params=params, workers=workers)
 
-	return hetesim_results_to_xr(result, source_list, target_list, metapath_list)
+	return hetesim_results_to_xr(source_list, target_list, result, metapath_list)
 
 def hetesim_results_to_xr(source_list, target_list, results, metapath_list):
 	""" 
