@@ -11,4 +11,4 @@ Characterizing the complex and noisy relationships between nodes can be very dif
 Usage
 -----
 
-To compute the latent semantic relationship between pairs of nodes, we first need to get 
+To compute the latent semantic relationship between pairs of nodes, we first need to curate a set of examples. In our wor
