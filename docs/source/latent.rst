@@ -21,4 +21,30 @@ A sample implementation is provided here:
 
 .. code-block:: python
 
-    from semnet.lsr import...
+    from semnet.lsr import generate_negative_examples, get_lsr, plot_lsr
+    from feature_extraction import CountExtractor
+
+    # Generate negative examples and convert pairs into source/target arrays
+    # Note: pos_ex contains positive example CUI pairs
+    neg_ex = generate_negative_examples(pos_ex, hold='s', seed=1)
+    all_ex = pos_ex + neg_ex
+    sources = all_ex[:,0]
+    targets = all_ex[:,1]
+
+    # Extract features
+    cex = CountExtractor()
+    data = cex.get_all_metapath_counts(sources, targets, 2)
+
+    # Reformatting the DataArray
+    features_dict_list = list()
+    for s, t in zip(data.source.values, data.target.values):
+        nonzero_mps = (data.loc[s, t, :, 'count'] != 0).values
+        num_nz = sum(nonzero_mps)
+        if num_nz != 0:
+            metapaths = data.metapath.values[nonzero_mps]
+            scores = data.loc[s, t, nonzero_mps, 'count'].values
+            feat_dict = {mp: score for mp, score in zip(metapaths , scores)}
+            features_dict_list.append(feat_dict)
+
+    # Compute the LSR
+    top_mp_names, top_mp_wt = get_lsr(feature_dict_list, 0.02, 20)
