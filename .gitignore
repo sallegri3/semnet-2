@@ -1,7 +1,3 @@
-.ipynb_checkpoints/
-data/
-nbs/.ipynb_checkpoints/
-semnet/.ipynb_checkpoints/
+.vscode/
+.DS_Store
 semnet/__pycache__
-smoking-v1/
-180618_edges.txt

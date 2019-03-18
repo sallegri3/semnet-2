@@ -1,3 +1,7 @@
+"""
+Constructs queries compatible with Neo4j and submits multithreaded jobs using ``concurrent.futures``. These functions will not typically be called directly by the user, but are used by the :mod:`semnet.feature_extraction` classes.
+"""
+
 import pickle
 import threading
 import concurrent.futures
@@ -6,33 +10,31 @@ from tqdm import tqdm_notebook
 # Avoid set size change warning
 tqdm_notebook.monitor_interval=0
 import copy
+import os
+_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 from semnet.conversion import get_metapath_abbrev
 
-"""
-Constructs queries compatible with neo4j and submits multithreaded jobs
-
-Neo4j Data Fields and Example Formatting
-Nodes:
-- type: DiseaseOrSyndrome
-- alt_counts: 184391,1,1
-- alt_kinds: DSYN,PATF,ANAB
-- identifier: C0002395
-- kind: DiseaseOrSyndrome
-- name: Alzheimer's Disease
-
-Edges:**
-- type: ASSOCIATED_WITH_AAPPaswtDSYN
-- pmid: 8725894,8725894,8725894
-- predicate: ASSOCIATED_WITH_AAPPaswtDSYN
-- weight: 3
-- SOURCE: glycogen synthase
-- TARGET: Alzheimer's Disease
-"""
-
 def build_metapath_query(source, target, d):
-	""" Generates a Cypher query string for all metapaths of length
-	less than or equal to d """
+	""" 
+	Generates a Cypher query string for all metapaths with :math:`length\\leq d`.
+	
+	Parameters
+	----------
+		source: str
+			The CUI of the source node.
+
+		target: str
+			The CUI of the target node.
+		
+		d: int
+			The length of the metapaths of interest.
+
+	Returns
+	-------
+		query: str
+			A Cypher query string that tells Neo4j to return all metapaths between ``source`` and ``target`` nodes.
+	"""
 
 	q = """
 		MATCH path = (m:`{s_type}` {{identifier: '{source}'}})-
@@ -41,7 +43,8 @@ def build_metapath_query(source, target, d):
 		extract(b in relationships(path) | b.predicate ) as edges 
 		"""
     
-	with gzip.open('../semnet/data/cui2type.pkl.gz', 'rb') as file:
+	path = os.path.join(_ROOT, 'data/cui2type.pkl.gz')
+	with gzip.open(path, 'rb') as file:
 		convert2type = pickle.load(file)
 
 	s_type = convert2type[source]
@@ -57,10 +60,28 @@ def build_metapath_query(source, target, d):
 
 
 def execute_multithread_query(func, params, workers=40):
-	""" Executes a large number of Cypher queries simultaneously """
+	"""
+	Executes a large number of Cypher queries simultaneously. Displays a `tqdm_notebook` progress bar in Jupyter.
+
+	Parameters
+	----------
+		func: function
+			The function to be performed on many different CPU cores.
+
+		params: list of dict
+			A list of different parameter sets to be applied to the function.
+
+		workers: int
+			The number of workers desired for parallel computation.
+
+	Returns
+	-------
+		results: list
+			A list of the func's output for the different parameter sets.
+	
+	"""
 
 	# Transform params for mapping
-	#transformed_params = copy.deepcopy([list(col) for col in zip(*[param.values() for param in params])])
 	transformed_params = [list(col) for col in zip(*[param.values() for param in params])]
 
 	# Submit jobs with ThreadPoolExecutor

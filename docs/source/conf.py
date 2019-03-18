@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'semnet'
+project = 'SemNet'
 copyright = '2019, Laboratory for Pathology Dynamics'
 author = 'Laboratory for Pathology Dynamics'
 
@@ -41,6 +41,8 @@ release = '0.0.1'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
+    'sphinx.ext.todo',
+    'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -76,13 +78,20 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+# html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 # html_theme_options = {}
+
+html_theme_options = {
+    # 'logo': 'pathology_dynamics.png'
+}
+html_logo = '_static/pathology_dynamics.png'
+html_favicon = '_static/pd_icon.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -176,3 +185,4 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+todo_include_todos = True
