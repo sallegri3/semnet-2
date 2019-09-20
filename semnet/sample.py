@@ -7,15 +7,10 @@ import pickle
 import gzip
 import random
 
-import os
-_ROOT = os.path.abspath(os.path.dirname(__file__))
-
 """ Load dictionaries that help keep track of names and types """
-path = os.path.join(_ROOT, 'data/name2type.pkl.gz')
-with gzip.open(path, 'rb') as file:
+with gzip.open('../semnet/data/name2type.pkl.gz', 'rb') as file:
    	name2type = pickle.load(file)
-path = os.path.join(_ROOT, 'data/type2names.pkl.gz')
-with gzip.open(path, 'rb') as file:
+with gzip.open('../semnet/data/type2names.pkl.gz', 'rb') as file:
 	type2names = pickle.load(file)
 
 

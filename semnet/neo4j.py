@@ -6,14 +6,16 @@ import pickle
 import threading
 import concurrent.futures
 import gzip
+import os
 from tqdm import tqdm_notebook
 # Avoid set size change warning
 tqdm_notebook.monitor_interval=0
 import copy
-import os
-_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+#Added on 7/3/19 to fix file path
 from semnet.conversion import get_metapath_abbrev
+_ROOT = os.path.abspath(os.path.dirname(__file__))
+path = os.path.join(_ROOT, 'data/cui2type.pkl.gz')
 
 def build_metapath_query(source, target, d):
 	""" 
@@ -42,9 +44,10 @@ def build_metapath_query(source, target, d):
 		RETURN extract(a in nodes(path) | a.kind) as nodes, 
 		extract(b in relationships(path) | b.predicate ) as edges 
 		"""
-    
-	path = os.path.join(_ROOT, 'data/cui2type.pkl.gz')
-	with gzip.open(path, 'rb') as file:
+#        import os
+#        _ROOT = os.path.abspath(os.path.dirname(__file__))
+#        path = os.path.join(_ROOT, 'data/cui2type.pkl.gz')
+	with gzip.open(path, 'rb') as file: #changed from '../semnet/data/cui2type.pkl.gz' to path
 		convert2type = pickle.load(file)
 
 	s_type = convert2type[source]

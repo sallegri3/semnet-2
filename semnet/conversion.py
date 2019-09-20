@@ -5,12 +5,17 @@ in hetio. Hetio provides simple operations on the metagraph.
 
 import re
 import hetio.readwrite
-
+#import hetio.hetnet #added import hetio.hetnet in an attempt to get metagraph.get_metaedge to work
+from hetio.hetnet import MetaGraph
 
 """ Load the metagraph. """
 import os
-_ROOT = os.path.abspath(os.path.dirname(__file__))
-path = os.path.join(_ROOT, 'data/sem-net-mg_hetiofmt.json.gz')
+import sys
+path = os.path.abspath('data/sem-net-mg_hetiofmt.json.gz')
+
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(curr_dir, 'data/sem-net-mg_hetiofmt.json.gz')
+
 metagraph = hetio.readwrite.read_metagraph(path)
 
 

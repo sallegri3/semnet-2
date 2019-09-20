@@ -8,10 +8,9 @@ representation of the metapaths between them.
 import xarray as xr
 import numpy as np
 from collections import Counter
-import os
-_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-import hetio.readwrite
+#import hetio.readwrite
+from hetio import readwrite
 import hetio.neo4j
 
 from py2neo import Graph
@@ -26,7 +25,9 @@ class BaseFeatureExtractor(object):
   """
 
   def __init__(self):
-    self.graph = Graph(password='j@ck3t5_m1tch311')
+    #self.graph = Graph(password='j@ck3t5_m1tch311')
+    self.graph = Graph(password='Mitch-Lin')
+	
     
   def results_to_dataarray(self, sources, targets, results, metric):
     """ 
@@ -166,7 +167,11 @@ class DwpcExtractor(BaseFeatureExtractor):
   
   def __init__(self):
     """ Load the metagraph and connect to Neo4j """
-    path = os.path.join(_ROOT, 'data/sem-net-mg_hetiofmt.json.gz')
+    
+#    path = '../semnet/data/sem-net-mg_hetiofmt.json.gz'
+    import os
+    _ROOT = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(_ROOT,'data/sem-net-mg_hetiofmt.json.gz')
     self.metagraph = hetio.readwrite.read_metagraph(path)
     super(DwpcExtractor, self).__init__()
   

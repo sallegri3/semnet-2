@@ -83,7 +83,7 @@ def get_lsr(counters_list, c, top_num=10):
 		counters_list: list of Counter()
 			A list of counters for positive and negative example pairs.
 		c: float
-			See :func:`semnet.lsr.compute_mp_weights()`.
+			See :func:`semnet.compute_mp_weights()`.
 		top_num: int
 			The number of representative metapaths to select for the LSR.
 	

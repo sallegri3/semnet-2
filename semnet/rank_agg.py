@@ -40,6 +40,8 @@ class UnsupervisedRankAggregator(object):
 		self.metapaths = self.data_array.metapath.values
 
 		# Fetch the verbose names
+		#int_rf_df = pd.read_csv('data/impd_cogn_sources.tsv', delimiter='\t')
+		#cui2name = {cui:name for cui, name in zip(int_rf_df.identifier, int_rf_df.name)} 
 		self.source_names = np.array([cui2name[source] for source in self.sources])
 
 
