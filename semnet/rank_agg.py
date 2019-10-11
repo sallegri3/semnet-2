@@ -11,6 +11,12 @@ ranking for each source node.
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tqdm import tqdm
+import os
+import pickle
+
+_ROOT = os.path.abspath(os.path.dirname(__file__))
+cui2name = pickle.load(open(os.path.join(_ROOT, 'data/cui2name.pkl'),'rb'))
 
 class UnsupervisedRankAggregator(object):
     """
@@ -127,12 +133,15 @@ class UnsupervisedRankAggregator(object):
 
         return {mp: wt for mp, wt in zip(self.metapaths, self.weights)}
 
-    def get_scores(self):
+    def get_scores(self, cui_key=False):
         """ Returns a dictionary of source scores based on the learned ranking model. """
 
         scores = np.dot(self.rankings, self.weights)
         ranked_indices = np.argsort(scores)
-        ranked_sources = self.source_names[ranked_indices]
+        if cui_key:
+            ranked_sources = self.sources[ranked_indices]
+        else:
+            ranked_sources = self.source_names[ranked_indices]
         ranked_scores = sorted(scores)
         self.scores = {source:score for source, score in zip(ranked_sources, ranked_scores)}
 
@@ -192,3 +201,46 @@ def rank_by_feature(all_data, target, metric):
     rankings = np.array(rankings).T
 
     return rankings, thresholds
+
+
+# Define function to get rankings w.r.t. a list of items
+def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
+    # Make rank aggregator
+    ura = UnsupervisedRankAggregator(features, cui2name)
+
+    # Get rankings in terms of each CUI
+    n_feats = features.metapath.shape[0]
+    rankings = []
+    for cui in tqdm(cuis):
+        ura.aggregate(metric, cui, lambd=lambd, theta=theta_frac*n_feats)
+        curr_rankings = pd.Series(ura.get_scores(cui_key=True), name=cui2name[cui])
+        curr_rankings -= curr_rankings.min()
+        curr_rankings /= curr_rankings.max()
+        rankings.append(curr_rankings)
+
+    rankings_df = pd.concat(rankings, axis=1, sort=False)
+    for col in [cui2name[cui] for cui in cuis]:
+        rankings_df[col+' rank'] = rankings_df[col].rank()
+    rankings_df = rankings_df[sorted(rankings_df.columns.tolist())]
+    rankings_df['avg_score'] = rankings_df[[cui2name[cui] for cui in cuis]].mean(axis=1)
+    rankings_df['avg_rank'] = rankings_df['avg_score'].rank()
+
+    # Get rankings for all of the individual target columns
+    for col in [cui2name[cui] for cui in cuis]:
+        rankings_df[col+' rank'] = rankings_df[col].rank()
+
+    # Get overall ranking and add to df
+    if len(cuis) > 1:
+        ura.aggregate(metric, cuis, lambd=lambd, theta=len(cuis)*theta_frac*n_feats)
+        overall_score = pd.Series(ura.get_scores(cui_key=True), name='overall_score')
+        overall_score -= overall_score.min()
+        overall_score /= overall_score.max()
+        rankings_df = pd.concat([rankings_df, overall_score], axis=1, sort=False)
+        rankings_df['overall_rank'] = rankings_df['overall_score'].rank()
+
+    # Add medical names for each term and reorder so this is first column
+    rankings_df['Name'] = rankings_df.index.map(cui2name)
+    cols = rankings_df.columns.tolist()
+    rankings_df = rankings_df[['Name'] + cols[:-1]]
+    rankings_df.index.name = 'CUI'
+    return rankings_df

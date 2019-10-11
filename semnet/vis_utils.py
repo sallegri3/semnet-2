@@ -6,6 +6,11 @@ import pandas as pd
 import re
 import os
 import pickle
+import seaborn as sns
+from sklearn.metrics import pairwise_distances
+from scipy.cluster.hierarchy import linkage
+from scipy.spatial.distance import pdist
+import numpy as np
 
 # Load Graph
 graph = Graph(password='Mitch-Lin')
@@ -75,7 +80,7 @@ def get_nbhr_and_edge_types(target):
     return nbhr_counts, outgoing_edge_type_counts, incoming_edge_type_counts
 
 
-def plot_nbhd(target_list):
+def plot_nbhd(target_list, filepath=None):
     """
     Plot visualization of neighborhood around a given set of target nodes
 
@@ -87,65 +92,111 @@ def plot_nbhd(target_list):
     names = [cui2name[target] for target in target_list]
     nbhr_dfs, out_dfs, in_dfs = [], [], []
 
+    # Get metrics for each target node
     for target in target_list:
         nbhr_counts, out_counts, in_counts = get_nbhr_and_edge_types(target)
         name = cui2name[target]
-        nbhr_dfs.append(nbhr_counts.rename({'count':name+'_count', 'proportion':name+'_proportion'}, axi=1))
-        out_dfs.append(out_counts.rename({'count':name+'_count', 'proportion':name+'_proportion'}, axi=1))
-        in_dfs.append(in_counts.rename({'count':name+'_count', 'proportion':name+'_proportion'}, axi=1))
+        nbhr_dfs.append(nbhr_counts.rename({'count':name+'_count', 'proportion':name+'_proportion'}, axis=1))
+        out_dfs.append(out_counts.rename({'count':name+'_count', 'proportion':name+'_proportion'}, axis=1))
+        in_dfs.append(in_counts.rename({'count':name+'_count', 'proportion':name+'_proportion'}, axis=1))
 
+    # Visualize count and proportion
     count_cols = [name+'_count' for name in names]
     proportion_cols = [name+'_proportion' for name in names]
 
+    # Concatenate count and proportion data together and get metric to find most important cols
     nbhrs = pd.concat(nbhr_dfs, axis=1)
-    nbhrs['avg_proportion'] = nbhrs[proportion_cols]
+    nbhrs['avg_proportion'] = nbhrs[proportion_cols].mean(axis=1)
     outs = pd.concat(out_dfs, axis=1)
+    outs['avg_proportion'] = outs[proportion_cols].mean(axis=1)
     ins = pd.concat(in_dfs, axis=1)
+    ins['avg_proportion'] = ins[proportion_cols].mean(axis=1)
 
-    fig, ax = plt.subplots()
+    for data, name in zip([nbhrs, outs, ins], ['Neighbors','Outgoing Edges','Incoming Edges']):
+        fig,(ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(30,10))
+
+        # Plot counts
+        sorted_data = data.sort_values(by='avg_proportion', ascending=False)
+        sorted_data[count_cols].head(12).rename({col:col.split('_')[0] for col in count_cols}, axis=1).plot.barh(ax=ax1)
+        ax1.set_title(f"Count of {name} by Type")
+
+        # Plot proportions
+        sorted_data[proportion_cols].rename({col:col.split('_')[0] for col in proportion_cols}, axis=1).head(12).plot.barh(ax=ax2)
+        ax2.set_title(f"Proportion of {name} by Type")
+
+        # Plot total count
+        data[count_cols].rename({col:col.split('_')[0] for col in count_cols}, axis=1).sum().plot.bar(ax=ax0)
+        ax0.set_title(f"Total {name}")
+
+        plt.suptitle(f"Summary of {name} for Target Nodes")
+
+        if filepath is not None:
+            plt.savefig(f"{filepath}_{name.lower()}.png")
+
+    plt.show()
 
 
-def plot_cosine_cluters():
+
+def plot_cosine_cluters(metapath_weights, target, metric, source_subset=None, filepath=None):
     """
-    Plot seaborn heatmap of hierarchical clustering with cosine similarity
+    Plot seaborn heatmap of hierarchical clustering with cosine similarity.
     """
-    pass
+    # Reformat data to get desired vars and plot
+    if source_subset:
+        metapath_data = metapath_data.loc[{'source':source_subset}]
+    data = metapath_data.loc[{'target':target, 'metric':metric}].stack(features=('target','metapath'))
+    df = pd.DataFrame(data.values, index = [cui2name[i] for i in data.get_index('source')])
 
-def plot_metapath_distribution():
+    # Precompute distances for clustering
+    dist_matrix = 1 - pairwise_distances(df, metric='cosine')
+    np.fill_diagonal(dist_matrix, 0)
+    dist_array = pdist(df.values)
+    links = linkage(dist_array, optimal_ordering=False, method='complete')
+    dist_df = pd.DataFrame(dist_matrix, index=df.index, columns=df.index)
+
+    # Plot clustering
+    sns.clustermap(dist_df, row_linkage=links, col_linkage=links)
+    plt.title(f"Feature Correlation for {cui2name[target]}")
+
+    # Save figure if desired
+    if filepath is not none:
+        plt.savefig(f"{filepath}_{cui2name[target]}_{metric}_cluster_heatmap.png")
+
+
+
+def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
     """
     Create seaborn violin plots of distribution of metapath counts between target node and each source node
     """
-    pass
+    # Aggregate by source and target node
+    agg_data = metapath_data.loc[{'metric':metric}].sum(dim='metapath')
+    data = agg_data.to_dataframe(name=metric).reset_index()
+    data = data.drop(['metric','source'], axis=1).query(f"{metric} > 0")
+    data['target'] = data['target'].map(cui2name)
 
+    # Get metrics to adjust plot axes to make more visually appealing
+    data_max = data[metric].max().flatten()[0]
+    data_99 = data[metric].quantile(.99).flatten()[0]
 
+    # Plot data
+    sns.boxplot(x='target', y=metric, data = data)
+    if data_max > 1:
+        plt.ylim([0, data_99])
+    plt.title(f"{metric.title()} of Metapaths")
+    plt.xlabel('Target')
+    plt.ylabel(metric.title())
+
+    # Save figure if desired
+    if filepath:
+        plt.savefig(f"{filepath}_{metric}_metapath_distribution.png")
+    plt.show()
 
 
 
 
 
 if __name__ == '__main__':
+    # targets = ['C0302600', 'C0016059', 'C0489482']
+    # plot_nbhd(targets,filepath='/home/dkartchner3/research/semnet_applications/cvd/figures/cvd_target')
 
-    # target = 'C0302600'
-    for target in
-    name =
-    a, b, c = get_nbhr_and_edge_types(target)
-    print(a)
-    print(b)
-    print(c)
-    nbhrs = a.sort_values(by='count', ascending=False)
-    nbhrs.head(10).plot.barh()
-    plt.title("Angiogenesis Neighbor Types")
-    plt.savefig("ang_nbhr.png")
-    plt.show()
-
-    outgoing = b.sort_values(by='count', ascending=False)
-    outgoing.head(10).plot.barh()
-    plt.title("Angiogenesis Outgoing Edge Types")
-    plt.savefig("ang_out.png")
-    plt.show()
-
-    incoming = c.sort_values(by='count', ascending=False)
-    incoming.head(10).plot.barh()
-    plt.title("Angiogenesis Incoming Edge Types")
-    plt.savefig(f"{name}_in.png")
-    plt.show()
+    from glob import glob
