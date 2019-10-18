@@ -137,31 +137,50 @@ def plot_nbhd(target_list, filepath=None):
 
 
 
-def plot_cosine_cluters(metapath_weights, target, metric, source_subset=None, filepath=None):
+def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, filepath=None, agg='concat'):
     """
     Plot seaborn heatmap of hierarchical clustering with cosine similarity.
     """
     # Reformat data to get desired vars and plot
     if source_subset:
         metapath_data = metapath_data.loc[{'source':source_subset}]
-    data = metapath_data.loc[{'target':target, 'metric':metric}].stack(features=('target','metapath'))
+    data = metapath_data.loc[{'target':target, 'metric':metric}]
+
+    if type(target) == list:
+        if agg=='sum':
+            data = data.sum(dim='target')
+        else:
+            data = data.stack(features=('target','metapath'))
+    # else:
+    #     data = data.stack(features=('metapath'))
     df = pd.DataFrame(data.values, index = [cui2name[i] for i in data.get_index('source')])
 
     # Precompute distances for clustering
     dist_matrix = 1 - pairwise_distances(df, metric='cosine')
     np.fill_diagonal(dist_matrix, 0)
     dist_array = pdist(df.values)
-    links = linkage(dist_array, optimal_ordering=False, method='complete')
+    links = linkage(dist_array, optimal_ordering=True, method='complete')
     dist_df = pd.DataFrame(dist_matrix, index=df.index, columns=df.index)
 
+
     # Plot clustering
-    sns.clustermap(dist_df, row_linkage=links, col_linkage=links)
-    plt.title(f"Feature Correlation for {cui2name[target]}")
+    from matplotlib import rcParams
+    rcParams.update({'figure.autolayout': True})
+    sns.clustermap(dist_df, row_linkage=links, col_linkage=links, vmin=0, vmax=.75, xticklabels=True, yticklabels=True)
+    if type(target) == list:
+        plt.title("Multitarget Feature Correlation")
+    else:
+        plt.title(f"Feature Correlation for {cui2name[target]}")
+    # plt.gcf().subplots_adjust(bottom=0.15)
 
     # Save figure if desired
-    if filepath is not none:
-        plt.savefig(f"{filepath}_{cui2name[target]}_{metric}_cluster_heatmap.png")
+    if filepath is not None:
+        if type(target) == list:
+            plt.savefig(f"{filepath}_multitarget_{metric}_cluster_heatmap.png")
+        else:
+            plt.savefig(f"{filepath}_{cui2name[target]}_{metric}_cluster_heatmap.png")
 
+    plt.show()
 
 
 def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
