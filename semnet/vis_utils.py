@@ -183,12 +183,78 @@ def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, file
     plt.show()
 
 
+def vertex_pair_relationship(targets, source, filepath=None, signed_subset=False):
+    """
+    Function to summarize the relationships between a target-source pair
+    """
+    meaningful_predications = ['treats','prevents','predisposes','disrupts','causes','augments','complicates','stimulates','inhibits']
+    all_results = []
+    missed_targets = []
+    for target in targets:
+        # Make param dict
+        t_type = convert2type[target]
+        s_type = convert2type[source]
+        param_dict = {'target':target,
+                      't_type':t_type,
+                      'source':source,
+                      's_type':s_type}
+
+        # Make query to get vis results
+        q = """
+        MATCH (a:{t_type} {{identifier: '{target}'}}) - [r] - (b:{s_type} {{identifier: '{source}'}})
+        RETURN r.weight as count, r.predicate as relationship
+        """.format(**param_dict)
+        # print(q)
+
+        # Pull data
+        cursor = graph.run(q)
+        results = pd.DataFrame(cursor.data())
+        cursor.close()
+        # print(results)
+
+        if results.shape[0] > 0:
+
+            # Clean data with pandas
+            pattern = re.compile(r'[A-Z]+')
+            results['count'] = results['count'].astype(int)
+            results[cui2name[target]] = results['count']
+            results['predicate'] = results['relationship'].apply(lambda x: '_'.join(x.split('_')[:-1]).lower())
+            results = results.drop(['relationship', 'count'], axis=1)
+
+            grouped = results.groupby('predicate').sum()
+            if signed_subset:
+                mask = np.array([i in meaningful_predications for i in grouped.index])
+                grouped = grouped.loc[mask,:]
+            # grouped /= grouped.sum()
+            all_results.append(grouped)
+        else:
+            missed_targets.append(target)
+
+    results_agg = pd.concat(all_results, axis=1)
+    for target in missed_targets:
+        results_agg[cui2name[target]] = 0
+    results_agg.plot.barh()
+
+    # Write results to file
+    if filepath:
+        if signed_subset:
+            filepath = filepath + '_signed'
+        else:
+            filepath = filepath + '_full'
+        plt.savefig(f'{filepath}_{cui2name[source]}_bar.png')
+
+    results_agg.plot.pie(subplots=True, figsize=(24,8))
+    if filepath:
+        plt.savefig(f'{filepath}_{cui2name[source]}_pie.png')
+    plt.show()
+
+
 def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
     """
     Create seaborn violin plots of distribution of metapath counts between target node and each source node
     """
     # Aggregate by source and target node
-    agg_data = metapath_data.loc[{'metric':metric}].sum(dim='metapath')
+    agg_data = (metapath_data.loc[{'metric':metric}] > 0).sum(dim='metapath')
     data = agg_data.to_dataframe(name=metric).reset_index()
     data = data.drop(['metric','source'], axis=1).query(f"{metric} > 0")
     data['target'] = data['target'].map(cui2name)
@@ -199,8 +265,8 @@ def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
 
     # Plot data
     sns.boxplot(x='target', y=metric, data = data)
-    if data_max > 1:
-        plt.ylim([0, data_99])
+    # if data_max > 1:
+    #     plt.ylim([0, data_99])
     plt.title(f"{metric.title()} of Metapaths")
     plt.xlabel('Target')
     plt.ylabel(metric.title())

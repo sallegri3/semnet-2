@@ -14,6 +14,7 @@ import xarray as xr
 from tqdm import tqdm
 import os
 import pickle
+from scipy import stats
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 cui2name = pickle.load(open(os.path.join(_ROOT, 'data/cui2name.pkl'),'rb'))
@@ -216,6 +217,7 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
         curr_rankings = pd.Series(ura.get_scores(cui_key=True), name=cui2name[cui])
         curr_rankings -= curr_rankings.min()
         curr_rankings /= curr_rankings.max()
+        curr_rankings = 1 - curr_rankings
         rankings.append(curr_rankings)
 
     rankings_df = pd.concat(rankings, axis=1, sort=False)
@@ -230,13 +232,13 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
         rankings_df[col+' rank'] = rankings_df[col].rank()
 
     # Get overall ranking and add to df
-    if len(cuis) > 1:
-        ura.aggregate(metric, cuis, lambd=lambd, theta=len(cuis)*theta_frac*n_feats)
-        overall_score = pd.Series(ura.get_scores(cui_key=True), name='overall_score')
-        overall_score -= overall_score.min()
-        overall_score /= overall_score.max()
-        rankings_df = pd.concat([rankings_df, overall_score], axis=1, sort=False)
-        rankings_df['overall_rank'] = rankings_df['overall_score'].rank()
+    # if len(cuis) > 1:
+    #     ura.aggregate(metric, cuis, lambd=lambd, theta=len(cuis)*theta_frac*n_feats)
+    #     overall_score = pd.Series(ura.get_scores(cui_key=True), name='overall_score')
+    #     overall_score -= overall_score.min()
+    #     overall_score /= overall_score.max()
+    #     rankings_df = pd.concat([rankings_df, overall_score], axis=1, sort=False)
+    #     rankings_df['overall_rank'] = rankings_df['overall_score'].rank()
 
     # Add medical names for each term and reorder so this is first column
     rankings_df['Name'] = rankings_df.index.map(cui2name)
@@ -244,3 +246,53 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
     rankings_df = rankings_df[['Name'] + cols[:-1]]
     rankings_df.index.name = 'CUI'
     return rankings_df
+
+
+
+def high_importance_low_count(rankings, counts, max_path_length=2, ranking_cutoff=.5):
+    """
+    Get list of nodes prioritized by the geometric mean of their rank and count of metapaths
+    We generally consider metapaths of length 1 to indicate relationships present in the literature
+
+    Inputs:
+        ranking: pandas.DataFrame
+            Dataframe of rankings
+    """
+    # Make sure we only have count data
+    counts = counts.loc[{'metric':'count'}].squeeze()
+
+    # Get lengths of metapaths and mask of paths that work
+    metapath_names = list(counts.get_index('metapath'))
+    metapath_lengths =np.array([s.count('>') + s.count('<') for s in metapath_names])
+    mask = (metapath_lengths <= max_path_length)
+
+    prioritized_sources = {}
+
+    # Get prioritized rankings for each target individually
+    for cui in list(counts.get_index('target')):
+        name = cui2name[cui]
+        path_counts = counts.loc[{'target':cui,
+                                  'metapath':mask}].sum(dim=['metapath']).to_dataframe(name=f'{name}_path_count')
+        path_counts = path_counts.drop(['target','metric'], axis=1)
+        path_counts.index.name = 'CUI'
+
+        # # Get path counts and normalize
+        # path_counts = pd.Series(path_counts, index=list(counts.get_index('source'))
+        normalized_path_counts = path_counts / path_counts.max()
+        normalized_path_counts = 1 - normalized_path_counts
+        normalized_path_counts = normalized_path_counts.rename(columns={f'{name}_path_count':f'{name}_normalized_path_count'})
+        # print(normalized_path_counts.columns)
+
+        rankings = rankings.join(path_counts)
+        rankings = rankings.join(normalized_path_counts)
+        # print(rankings.head())
+        # rankings[f'{name}_path_count'] = path_counts
+        # rankings[f'{name}_normalized_path_count'] = normalized_path_counts
+        rankings[f'{name}_prioritized_score'] = stats.gmean(rankings[[name, f'{name}_normalized_path_count']], axis=1)
+        rankings[f'{name}_prioritized_rank'] = rankings[f'{name}_prioritized_score'].rank(ascending=False)
+
+        rankings = rankings.drop(f'{name}_normalized_path_count', axis=1)
+
+    return rankings
+
+    # Keep only rankings above cutoff percentile
