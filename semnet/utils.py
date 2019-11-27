@@ -104,16 +104,28 @@ def get_article_info(pmid, relationship_str=None):
     # Find impactfactor
     journal_match = find_journal_match(journal)
 
-    # Notate relationship to which these articles correspond
-    if relationship_str:
-        curr_results = [relationship_str]
-    else:
-        curr_results = []
-
     if journal_match:
         impact_factor = journal2impactfactor[journal_match]
-        return curr_results + [pmid, title, journal, date, impact_factor]
+        return [pmid, title, journal, date, impact_factor]
     else:
         return None
-        journal = data['result'][str(pmid)]['fulljournalname']
-        print("pmid : {}\ntitle: {}\njournal: {}\ndate: {}\n ".format(str(pmid), title, journal, date))
+
+def filter_pmids(pmids, impact_cutoff=2, date_cutoff=1980, max_return=None):
+
+    # Get info on each article
+    info = [get_article_info(pmid) for pmid in pmids]
+    info = [x for x in info if x is not None]
+
+    # Filter by journals that are relatively recent and credible
+    data = pd.DataFrame(info, columns=['pmid','title','journal','date','impact_factor'])
+    filtered = data.query(f'(date >= {date_cutoff}) & (impact_factor >= {impact_cutoff})')
+    sorted_pmids = filtered.sort_values(by='impact_factor',ascending=False)
+
+    # Return number top n pmids, joined with semicolons
+    if max_return is not None:
+        return ';'.join(sorted_pmids.head(max_return).pmid.tolist())
+
+    else:
+        return ';'.join(sorted_pmids.pmid.tolist())
+
+        

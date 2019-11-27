@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from py2neo import Graph
 import xarray as xr
-from utils import parse_metapath, merge_path_segments
+from utils import parse_metapath, merge_path_segments, filter_pmids
 import requests
 from fuzzywuzzy import process
 from fuzzywuzzy import fuzz
@@ -75,4 +75,16 @@ def get_paths_in_metapath(target, source, metapath):
                                    directions)
     pattern = re.compile(['n\d+'])
     cols = [c for c in results.columns if bool(pattern.match(c))]
-    paths = results[cols].apply(merge_path_segments, args=(edge_types, directions))
+    results['relationship'] = results[cols].apply(merge_path_segments, args=(edge_types, directions))
+    results['meta_relationship'] = metapath
+    results['endpoint'] = results['n0']
+    results['gene_or_aapp'] = results[f'n{m}']
+
+    # Get top PMIDs for each segment
+    for i in range(m):
+        results[f'seg_{i+1}_pmids'] = results[f'pmid{i}'].parallel_apply(lambda x: filter_pmids(x.split(','), max_return=3))
+    
+    cols = ['endpoint','gene_or_aapp','meta_relationship','relationship'] + [f'seg_{i}_pmids' for i in range(1, m+1)]
+    return results[cols]
+
+
