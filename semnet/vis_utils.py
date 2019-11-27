@@ -11,6 +11,8 @@ from sklearn.metrics import pairwise_distances
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 import numpy as np
+from semnet.utils import metapath_to_english
+pd.options.display.max_colwidth = 100
 
 # Load Graph
 graph = Graph(password='Mitch-Lin')
@@ -34,7 +36,6 @@ def get_nbhr_and_edge_types(target):
     """
     Get types of neighbors of target node, weighted by the connection strength to each one
     """
-
     # Make param dict
     t_type = convert2type[target]
     param_dict = {'target':target, 't_type':t_type}
@@ -234,6 +235,7 @@ def vertex_pair_relationship(targets, source, filepath=None, signed_subset=False
     for target in missed_targets:
         results_agg[cui2name[target]] = 0
     results_agg.plot.barh()
+    plt.title(f"Relationships for {cui2name[source]}")
 
     # Write results to file
     if filepath:
@@ -243,10 +245,10 @@ def vertex_pair_relationship(targets, source, filepath=None, signed_subset=False
             filepath = filepath + '_full'
         plt.savefig(f'{filepath}_{cui2name[source]}_bar.png')
 
-    results_agg.plot.pie(subplots=True, figsize=(24,8))
-    if filepath:
-        plt.savefig(f'{filepath}_{cui2name[source]}_pie.png')
-    plt.show()
+    # results_agg.plot.pie(subplots=True, figsize=(24,8))
+    # if filepath:
+    #     plt.savefig(f'{filepath}_{cui2name[source]}_pie.png')
+    # plt.show()
 
 
 def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
@@ -275,6 +277,51 @@ def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
     if filepath:
         plt.savefig(f"{filepath}_{metric}_metapath_distribution.png")
     plt.show()
+
+
+def plot_key_metapaths(weights, targets, source, metric='hetesim'):
+    '''
+    Create a bar plot of the weights of the most important metapaths
+    between a target-source pair.
+    '''
+    subset = weights.sel(target=targets,
+                         source=source).squeeze()
+
+    data = pd.DataFrame(subset.transpose('metapath','target').values,
+                        index=subset.get_index('metapath'),
+                        columns=[cui2name[t] for t in targets])
+
+    # Get metapaths for all sources with max path weight
+    mask = (data.max(axis=1) == data.values.max())
+
+    # Also get metapaths for top ranked in each category
+    top_rank_masks = [(data[col].rank(method='min', ascending=False) <= 5)
+                      for col in data.columns]
+
+    # Combine into overall mask that is elementwise OR of individuals
+    all_masks = pd.concat([mask]+top_rank_masks, axis=1)
+    overall_mask = all_masks.max(axis=1)
+
+    top_data = data[overall_mask]
+    top_data.index = top_data.index.map(metapath_to_english)
+    # print(top_data.index.map(metapath_to_english))
+
+    print(cui2name[source])
+    for col in top_data.columns:
+        m = top_data[col] > 0
+        display(top_data.loc[m, col].reset_index())
+
+    # Style data for display
+    # top_data.style.set_caption(f'{cui2name[source]}')
+    # d = top_data.style.background_gradient(cmap='Greens')
+    # print(source)
+    # print(top_data.sum(axis=1).max())
+    # display(d)
+    # top_data.plot.barh()
+    # plt.title(f"Top Metapaths for {cui2name[source]}")
+    # plt.show()
+
+# def highlight_nonzero()
 
 
 

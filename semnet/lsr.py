@@ -22,14 +22,14 @@ from semnet.vector import vectorize_results
 
 def compute_mp_weights(mp_count_mat, c):
 	"""
-	Computes the optimal LSR weights by solving the linear programming problem 
+	Computes the optimal LSR weights by solving the linear programming problem
 	formulated by Wang et al. 2016.
 
 	Parameters
 	----------
 		mp_count_mat: np.array
 			A ``numpy`` array of metapath counts, where the rows are training examples and the columns are metapath counts.
-		
+
 		c: float
 			A slack variable tuning parameter where :math:`c\\in(0,1]`. When :math:`c=1`, "this model will essentially maximize the weights of metapaths that have the biggest difference between positive and negative examples. If :math:`c<1`, then the model will consider the accident that positive and negative examples share the important meta-paths, and that some of the important metapaths are missing in some positive examples" [1]_.
 
@@ -51,7 +51,7 @@ def compute_mp_weights(mp_count_mat, c):
 
 	# Build up the upper bound matrix
 	tmp1 = np.concatenate([-np.eye(M), np.zeros((M,K))], axis=1)
-	tmp2 = np.concatenate([np.zeros((K,M)), -np.eye(K)], axis=1)
+	tmp2 = np.concatenate([np.zeros((K,M)), - np.eye(K)], axis=1)
 	tmp = np.array([neg - pos for neg, pos in zip(neg_count_mat, pos_count_mat)])
 	tmp3 = np.concatenate([tmp, -np.eye(K)], axis=1)
 	A_ub = np.concatenate([tmp1, tmp2, tmp3])
@@ -77,7 +77,7 @@ def get_lsr(counters_list, c, top_num=10):
 	Solves for LSR weights and returns the top metapaths.
 
 	.. note:: This is the function that will typically be called by the user.
-	
+
 	Parameters
 	----------
 		counters_list: list of Counter()
@@ -86,7 +86,7 @@ def get_lsr(counters_list, c, top_num=10):
 			See :func:`semnet.lsr.compute_mp_weights()`.
 		top_num: int
 			The number of representative metapaths to select for the LSR.
-	
+
 	Returns
 	-------
 		top_mp_names: list of str
@@ -117,8 +117,8 @@ def get_lsr(counters_list, c, top_num=10):
 
 
 def plot_lsr(top_mp_names, top_mp_wt, filename=None):
-	""" 
-	Generates a bar plot of the most relevant metapaths. 
+	"""
+	Generates a bar plot of the most relevant metapaths.
 
 	.. note:: This is the function that will typically be called by the user.
 

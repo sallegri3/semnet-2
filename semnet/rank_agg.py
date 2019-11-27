@@ -212,24 +212,32 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
     # Get rankings in terms of each CUI
     n_feats = features.metapath.shape[0]
     rankings = []
+    score_cols = []
     for cui in tqdm(cuis):
+        name = cui2name[cui]+ '_raw_score'
+        score_cols.append(name)
         ura.aggregate(metric, cui, lambd=lambd, theta=theta_frac*n_feats)
-        curr_rankings = pd.Series(ura.get_scores(cui_key=True), name=cui2name[cui])
-        curr_rankings -= curr_rankings.min()
+        curr_rankings = pd.Series(ura.get_scores(cui_key=True), name=name)
+        # curr_rankings -= curr_rankings.min()
         curr_rankings /= curr_rankings.max()
-        curr_rankings = 1 - curr_rankings
+        curr_min = curr_rankings.min()
+        curr_rankings = (1 - curr_rankings) + curr_min
         rankings.append(curr_rankings)
 
     rankings_df = pd.concat(rankings, axis=1, sort=False)
-    for col in [cui2name[cui] for cui in cuis]:
-        rankings_df[col+' rank'] = rankings_df[col].rank()
-    rankings_df = rankings_df[sorted(rankings_df.columns.tolist())]
-    rankings_df['avg_score'] = rankings_df[[cui2name[cui] for cui in cuis]].mean(axis=1)
-    rankings_df['avg_rank'] = rankings_df['avg_score'].rank()
 
     # Get rankings for all of the individual target columns
     for col in [cui2name[cui] for cui in cuis]:
-        rankings_df[col+' rank'] = rankings_df[col].rank()
+        rankings_df[col+'_raw_rank'] = rankings_df[col+'_raw_score'].rank(ascending=False)
+
+    # Get average to create overall ranking
+    rankings_df = rankings_df[sorted(rankings_df.columns.tolist())]
+    rankings_df['overall_raw_score'] = rankings_df[score_cols].mean(axis=1)
+    rankings_df['overall_raw_rank'] = rankings_df['overall_raw_score'].rank(ascending=False)
+
+    # Get rankings for all of the individual target columns
+    # rankings_df[col+' rank'] = rankings_df[col].rank()
+    # for col in [cui2name[cui] for cui in cuis]:
 
     # Get overall ranking and add to df
     # if len(cuis) > 1:
@@ -249,14 +257,23 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
 
 
 
-def high_importance_low_count(rankings, counts, max_path_length=2, ranking_cutoff=.5):
+def high_importance_low_count(rankings, counts, max_path_length=2):
     """
     Get list of nodes prioritized by the geometric mean of their rank and count of metapaths
     We generally consider metapaths of length 1 to indicate relationships present in the literature
 
     Inputs:
         ranking: pandas.DataFrame
-            Dataframe of rankings
+            Dataframe of rankings produced by :get_all_scores:
+
+        Counts: xarray.DataArray
+            targets x sources x metapaths x metrics dataarray containing metapath counts for each source target pair
+
+        max_path_length: int
+            Max length of metapath to consider when reranking based on path connectivity
+
+    Returns:
+
     """
     # Make sure we only have count data
     counts = counts.loc[{'metric':'count'}].squeeze()
@@ -266,7 +283,7 @@ def high_importance_low_count(rankings, counts, max_path_length=2, ranking_cutof
     metapath_lengths =np.array([s.count('>') + s.count('<') for s in metapath_names])
     mask = (metapath_lengths <= max_path_length)
 
-    prioritized_sources = {}
+    novelty_weights = []
 
     # Get prioritized rankings for each target individually
     for cui in list(counts.get_index('target')):
@@ -277,21 +294,43 @@ def high_importance_low_count(rankings, counts, max_path_length=2, ranking_cutof
         path_counts.index.name = 'CUI'
 
         # # Get path counts and normalize
-        # path_counts = pd.Series(path_counts, index=list(counts.get_index('source'))
         normalized_path_counts = path_counts / path_counts.max()
-        normalized_path_counts = 1 - normalized_path_counts
+        path_min = normalized_path_counts.min()
+        normalized_path_counts = (1 - normalized_path_counts) + path_min
         normalized_path_counts = normalized_path_counts.rename(columns={f'{name}_path_count':f'{name}_normalized_path_count'})
-        # print(normalized_path_counts.columns)
+
+        # Add extra weight to sources directly connected to target
+        # Weight is $(1 - nbhr_weight) is disconnected, 1 if connected
+        nbhr_mask = (metapath_lengths == 1)
+        nbhr_weight = .5
+        nbhr_flag = counts.loc[{'target':cui,
+                                  'metapath':mask}].sum(dim=['metapath']).to_dataframe(name=f'{name}_nbhr_flag')
+        nbhr_flag = nbhr_flag.drop(['target','metric'], axis=1)
+        nbhr_flag = nbhr_weight * (nbhr_flag > 0).astype(float) + (1 - nbhr_weight)
+        nbhr_flag.index.name = 'CUI'
 
         rankings = rankings.join(path_counts)
         rankings = rankings.join(normalized_path_counts)
-        # print(rankings.head())
-        # rankings[f'{name}_path_count'] = path_counts
-        # rankings[f'{name}_normalized_path_count'] = normalized_path_counts
-        rankings[f'{name}_prioritized_score'] = stats.gmean(rankings[[name, f'{name}_normalized_path_count']], axis=1)
-        rankings[f'{name}_prioritized_rank'] = rankings[f'{name}_prioritized_score'].rank(ascending=False)
+        rankings = rankings.join(nbhr_flag)
 
-        rankings = rankings.drop(f'{name}_normalized_path_count', axis=1)
+        novelty_weights.append(normalized_path_counts)
+
+        rankings[f'{name}_novelty_score'] = stats.gmean(rankings[[f'{name}_raw_score', f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
+        rankings[f'{name}_novelty_rank'] = rankings[f'{name}_novelty_score'].rank(ascending=False)
+
+        rankings = rankings.drop([f'{name}_normalized_path_count', f'{name}_nbhr_flag'], axis=1)
+
+    # Get overall novelty score/rank
+    mean_novelty = pd.concat(novelty_weights, axis=1).mean(axis=1)
+    novelty_agg = pd.concat([mean_novelty, rankings['overall_raw_score']], axis=1)
+    novelty_agg['overall_novelty_score'] = stats.gmean(novelty_agg, axis=1)
+    novelty_agg['overall_novelty_rank'] = novelty_agg['overall_novelty_score'].rank(ascending=False)
+    display(novelty_agg.head())
+    rankings = rankings.join(novelty_agg[['overall_novelty_score','overall_novelty_rank']])
+    rankings['overall_path_count'] = rankings.filter(regex='path_count$', axis=1).sum(axis=1)
+
+    cols = rankings.columns.tolist()
+    rankings = rankings[['Name'] + sorted(cols[1:])]
 
     return rankings
 
