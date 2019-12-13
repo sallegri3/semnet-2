@@ -181,7 +181,7 @@ def rank_by_feature(all_data, target, metric):
     n_sources = all_data.get_index('source').shape[0]
     features = all_data.loc[:, target, :, metric].values.T.reshape((-1, n_sources))
     for row in features:
-        ranks = np.array(pd.Series(row).rank(method='dense', ascending=False))
+        ranks = np.array(pd.Series(row).rank(method='dense', ascending=False)).astype(int)
 
         """
         # Generate randomized rankings to resolve ties
@@ -205,7 +205,7 @@ def rank_by_feature(all_data, target, metric):
 
 
 # Define function to get rankings w.r.t. a list of items
-def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
+def get_all_scores(features, cuis, metric='hetesim',lambd=1):
     # Make rank aggregator
     ura = UnsupervisedRankAggregator(features, cui2name)
 
@@ -216,7 +216,14 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1,theta_frac=.05):
     for cui in tqdm(cuis):
         name = cui2name[cui]+ '_raw_score'
         score_cols.append(name)
-        ura.aggregate(metric, cui, lambd=lambd, theta=theta_frac*n_feats)
+
+        try:
+            ura.aggregate(metric, cui, lambd=lambd)
+        except Exception as e:
+            print(e)
+            print(f"Removing cui for {cui2name[cui]} from list targets")
+            cuis.remove(cui)
+            continue
         curr_rankings = pd.Series(ura.get_scores(cui_key=True), name=name)
         # curr_rankings -= curr_rankings.min()
         curr_rankings /= curr_rankings.max()
@@ -316,7 +323,7 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
         novelty_weights.append(normalized_path_counts)
 
         rankings[f'{name}_novelty_score'] = stats.gmean(rankings[[f'{name}_raw_score', f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
-        rankings[f'{name}_novelty_rank'] = rankings[f'{name}_novelty_score'].rank(ascending=False)
+        rankings[f'{name}_novelty_rank'] = rankings[f'{name}_novelty_score'].rank(ascending=False).astype(int)
 
         rankings = rankings.drop([f'{name}_normalized_path_count', f'{name}_nbhr_flag'], axis=1)
 
@@ -325,7 +332,7 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
     novelty_agg = pd.concat([mean_novelty, rankings['overall_raw_score']], axis=1)
     novelty_agg['overall_novelty_score'] = stats.gmean(novelty_agg, axis=1)
     novelty_agg['overall_novelty_rank'] = novelty_agg['overall_novelty_score'].rank(ascending=False)
-    display(novelty_agg.head())
+    # display(novelty_agg.head())
     rankings = rankings.join(novelty_agg[['overall_novelty_score','overall_novelty_rank']])
     rankings['overall_path_count'] = rankings.filter(regex='path_count$', axis=1).sum(axis=1)
 

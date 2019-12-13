@@ -21,7 +21,8 @@ import os
 #
 def write_multisheet_excel(sheets, sheet_names, filepath, overwrite=True):
     if overwrite:
-        os.remove(filepath)
+        if os.path.isfile(filepath):
+            os.remove(filepath)
     # Write results to spreadsheet
     for sheet, name in zip(sheets, sheet_names):
         if os.path.isfile(filepath):
@@ -29,6 +30,6 @@ def write_multisheet_excel(sheets, sheet_names, filepath, overwrite=True):
             writer = pd.ExcelWriter(filepath, engine = 'openpyxl')
             writer.book = book
         else:
-            writer = pd.ExcelWriter(path, engine = 'openpyxl')
+            writer = pd.ExcelWriter(filepath, engine = 'openpyxl')
         sheet.to_excel(writer, sheet_name=name.title())
         writer.save()

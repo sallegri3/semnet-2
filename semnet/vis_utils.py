@@ -279,7 +279,7 @@ def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
     plt.show()
 
 
-def plot_key_metapaths(weights, targets, source, metric='hetesim'):
+def get_key_metapaths(weights, targets, source, metric='hetesim'):
     '''
     Create a bar plot of the weights of the most important metapaths
     between a target-source pair.
@@ -289,7 +289,7 @@ def plot_key_metapaths(weights, targets, source, metric='hetesim'):
 
     data = pd.DataFrame(subset.transpose('metapath','target').values,
                         index=subset.get_index('metapath'),
-                        columns=[cui2name[t] for t in targets])
+                        columns=[t for t in targets])
 
     # Get metapaths for all sources with max path weight
     mask = (data.max(axis=1) == data.values.max())
@@ -303,10 +303,17 @@ def plot_key_metapaths(weights, targets, source, metric='hetesim'):
     overall_mask = all_masks.max(axis=1)
 
     top_data = data[overall_mask]
+    
+    top_dict = {}
+    for t in targets:
+        top_dict[t] = top_data.index[top_data[t] > 0].tolist()
+    return top_dict
+
+    # display(top_data)
     top_data.index = top_data.index.map(metapath_to_english)
     # print(top_data.index.map(metapath_to_english))
 
-    print(cui2name[source])
+    # print(cui2name[source])
     for col in top_data.columns:
         m = top_data[col] > 0
         display(top_data.loc[m, col].reset_index())

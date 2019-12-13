@@ -7,6 +7,9 @@ import os
 import pickle
 import seaborn as sns
 import numpy as np
+import requests
+from fuzzywuzzy import process
+from fuzzywuzzy import fuzz
 
 # Load Graph
 graph = Graph(password='Mitch-Lin')
@@ -26,12 +29,20 @@ abbr2node.update(temp)
 
 cui2name = pickle.load(open(os.path.join(_ROOT, 'data/cui2name.pkl'),'rb'))
 
+all_journals = pickle.load(open(os.path.join(_ROOT, 'data/alljournals.pkl.gz'),'rb'))
+
+journal2impactfactor = pickle.load(open(os.path.join(_ROOT, 'data/journal2impactfactor.pkl.gz'),'rb'))
+# print(all_journals)
+
+
+key = 'da79e005a4869dfef15528a82feb069ee908'
+
 def metapath_to_english(metapath):
-    nodes, edges, directions = parse_metapath(return_directions=True)
+    nodes, edges, directions = parse_metapath(metapath, return_directions=True)
     return merge_path_segments(nodes, edges, directions)
 
 
-def parse_metapath(metapath, return_directions=False):
+def parse_metapath(metapath, return_directions=False, return_relationships=False):
     '''
     Extract metapath details from metapath abbreviation that can be used to
     query Neo4j Graph
@@ -61,15 +72,24 @@ def parse_metapath(metapath, return_directions=False):
     node_types = [abbr2node[n] for n in nodes]
     edge_types = [abbr2edge[e] for e in edges]
 
-    if return_directions
-        return node_types, edge_types, directions
-    else:
-        return node_types, edge_types
+    m = len(edges)
+    relationships = [f'{edge_types[i]}_{nodes[i]}{edges[i]}{nodes[i+1]}'  if directions[i] == '>' else f'{edge_types[i]}_{nodes[i+1]}{edges[i]}{nodes[i]}' for i in range(m)]
+
+    results = [node_types, edge_types]
+
+    if return_directions:
+        results.append(directions)
+
+    if return_relationships:
+        results.append(relationships)
+
+    return results
 
 
 def merge_path_segments(nodes, edges, directions):
     path = nodes[0]
-    for (n, e, d) in zip(nodes, edges, directions):
+    for (n, e, d) in zip(nodes[1:], edges, directions):
+        # print(d, e, n)
         path += d + e + d + n
     return path
 
@@ -88,29 +108,40 @@ def find_journal_match(journal_name, all_journals=all_journals, thresh=90):
         return match
     else:
         return None
-
+    
 def get_article_info(pmid, relationship_str=None):
     # Get metadata for each PMID
     data = get_pmid_info(pmid)['result'][str(pmid)]
-
+    
     # Get publication info
-    date = data['pubdate'][:4] # epubdate or pubdate?
-    title = data['title']
-
-    # Get journal name and do some postprocessing
-    journal = data['fulljournalname']
-    journal = journal.replace("&amp;", '&')
-
-    # Find impactfactor
-    journal_match = find_journal_match(journal)
-
-    if journal_match:
-        impact_factor = journal2impactfactor[journal_match]
-        return [pmid, title, journal, date, impact_factor]
-    else:
+    try:
+        date = data['pubdate'][:4] # epubdate or pubdate?
+        title = data['title']
+        
+        # Get journal name and do some postprocessing
+        journal = data['fulljournalname']
+        journal = journal.replace("&amp;", '&')
+        
+        # Find impactfactor
+        journal_match = find_journal_match(journal)
+        
+        # Notate relationship to which these articles correspond
+        if relationship_str:
+            curr_results = [relationship_str]
+        else: 
+            curr_results = []
+            
+        if journal_match:
+            impact_factor = journal2impactfactor[journal_match]
+            return curr_results + [pmid, title, journal, date, impact_factor]
+        else:
+            return None
+    except:
+        print(data)
         return None
-
-def filter_pmids(pmids, impact_cutoff=2, date_cutoff=1980, max_return=None):
+        
+        
+def filter_pmids(pmids, impact_cutoff=2, date_cutoff=1970, max_return=None):
 
     # Get info on each article
     info = [get_article_info(pmid) for pmid in pmids]
@@ -118,6 +149,8 @@ def filter_pmids(pmids, impact_cutoff=2, date_cutoff=1980, max_return=None):
 
     # Filter by journals that are relatively recent and credible
     data = pd.DataFrame(info, columns=['pmid','title','journal','date','impact_factor'])
+    data['date'] = data['date'].astype(int)
+    # data['impact_factor'] = data['impact_factor'].astype(float)
     filtered = data.query(f'(date >= {date_cutoff}) & (impact_factor >= {impact_cutoff})')
     sorted_pmids = filtered.sort_values(by='impact_factor',ascending=False)
 
@@ -127,5 +160,3 @@ def filter_pmids(pmids, impact_cutoff=2, date_cutoff=1980, max_return=None):
 
     else:
         return ';'.join(sorted_pmids.pmid.tolist())
-
-        
