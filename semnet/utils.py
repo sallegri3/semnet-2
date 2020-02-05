@@ -42,6 +42,21 @@ def metapath_to_english(metapath):
     return merge_path_segments(nodes, edges, directions)
 
 
+def check_is_reversed(start_type, end_type, edge):
+    '''
+    Determine direction of an edge
+    '''
+    node_pat = re.compile('[A-Z]+')
+    endpoint_types = [abbr2node[n] for n in node_pat.findall(edge.split('_')[-1])]
+    reversed = False
+    if start_type != endpoint_types[0]:
+        if start_type != endpoint_types[1]:
+            raise Exception("Types don't match up with edge")
+        else:
+            reversed = True
+    return reversed
+
+
 def parse_metapath(metapath, return_directions=False, return_relationships=False):
     '''
     Extract metapath details from metapath abbreviation that can be used to
@@ -108,29 +123,29 @@ def find_journal_match(journal_name, all_journals=all_journals, thresh=90):
         return match
     else:
         return None
-    
+
 def get_article_info(pmid, relationship_str=None):
     # Get metadata for each PMID
     data = get_pmid_info(pmid)['result'][str(pmid)]
-    
+
     # Get publication info
     try:
         date = data['pubdate'][:4] # epubdate or pubdate?
         title = data['title']
-        
+
         # Get journal name and do some postprocessing
         journal = data['fulljournalname']
         journal = journal.replace("&amp;", '&')
-        
+
         # Find impactfactor
         journal_match = find_journal_match(journal)
-        
+
         # Notate relationship to which these articles correspond
         if relationship_str:
             curr_results = [relationship_str]
-        else: 
+        else:
             curr_results = []
-            
+
         if journal_match:
             impact_factor = journal2impactfactor[journal_match]
             return curr_results + [pmid, title, journal, date, impact_factor]
@@ -139,8 +154,8 @@ def get_article_info(pmid, relationship_str=None):
     except:
         print(data)
         return None
-        
-        
+
+
 def filter_pmids(pmids, impact_cutoff=2, date_cutoff=1970, max_return=None):
 
     # Get info on each article

@@ -206,6 +206,17 @@ def rank_by_feature(all_data, target, metric):
 
 # Define function to get rankings w.r.t. a list of items
 def get_all_scores(features, cuis, metric='hetesim',lambd=1):
+    '''
+    Function to get rankings with respect to a list of targets
+
+    Inputs:
+    ----------------------------------------------------------
+        features: xarray.DataArray
+            DataArray containing feature extractor data
+
+        cuis: list of string
+            List of CUIs of targets for which we want rankings
+    '''
     # Make rank aggregator
     ura = UnsupervisedRankAggregator(features, cui2name)
 
@@ -221,7 +232,7 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1):
             ura.aggregate(metric, cui, lambd=lambd)
         except Exception as e:
             print(e)
-            print(f"Removing cui for {cui2name[cui]} from list targets")
+            print(f"Removing cui for {cui2name[cui]} from list of targets")
             cuis.remove(cui)
             continue
         curr_rankings = pd.Series(ura.get_scores(cui_key=True), name=name)
@@ -322,6 +333,7 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
 
         novelty_weights.append(normalized_path_counts)
 
+        rankings[f'{name}_newness_score'] = stats.gmean(rankings[[f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
         rankings[f'{name}_novelty_score'] = stats.gmean(rankings[[f'{name}_raw_score', f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
         rankings[f'{name}_novelty_rank'] = rankings[f'{name}_novelty_score'].rank(ascending=False).astype(int)
 
