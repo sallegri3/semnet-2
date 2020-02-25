@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+from matplotlib_venn import venn2
 import xarray as xr
 import gzip
 from py2neo import Graph
@@ -45,7 +46,7 @@ def get_nbhr_and_edge_types(target):
     MATCH (a:{t_type} {{identifier: '{target}'}}) - [r] - (b)
     RETURN labels(b) as nodetype, r.weight as count, r.predicate as relationship
     """.format(**param_dict)
-    print(q)
+    # print(q)
 
     # Pull data
     cursor = graph.run(q)
@@ -106,11 +107,11 @@ def plot_nbhd(target_list, filepath=None):
     proportion_cols = [name+'_proportion' for name in names]
 
     # Concatenate count and proportion data together and get metric to find most important cols
-    nbhrs = pd.concat(nbhr_dfs, axis=1)
+    nbhrs = pd.concat(nbhr_dfs, axis=1, sort=True)
     nbhrs['avg_proportion'] = nbhrs[proportion_cols].mean(axis=1)
-    outs = pd.concat(out_dfs, axis=1)
+    outs = pd.concat(out_dfs, axis=1, sort=True)
     outs['avg_proportion'] = outs[proportion_cols].mean(axis=1)
-    ins = pd.concat(in_dfs, axis=1)
+    ins = pd.concat(in_dfs, axis=1, sort=True)
     ins['avg_proportion'] = ins[proportion_cols].mean(axis=1)
 
     for data, name in zip([nbhrs, outs, ins], ['Neighbors','Outgoing Edges','Incoming Edges']):
@@ -329,6 +330,19 @@ def get_key_metapaths(weights, targets, source, metric='hetesim'):
     # plt.show()
 
 # def highlight_nonzero()
+
+
+def venn_diagram(concept_dict, savepath=None):
+    # Make venn diagram with concept dict
+    (k1, v1), (k2, v2) = concept_dict.items()
+    v = venn2([v1, v2], (k1, k2))
+    ppp = v.get_label_by_id('10').set_text('\n'.join(v1 - v2))
+    v.get_label_by_id('11').set_text('\n'.join(v1 & v2))
+    v.get_label_by_id('01').set_text('\n'.join(v2 - v1))
+    if savepath:
+        plt.savefig(savepath)
+    plt.show()
+
 
 
 

@@ -205,7 +205,7 @@ def rank_by_feature(all_data, target, metric):
 
 
 # Define function to get rankings w.r.t. a list of items
-def get_all_scores(features, cuis, metric='hetesim',lambd=1):
+def get_all_scores(features, cuis, metric='hetesim',lambd=1, theta=500, return_overall_ranking=False):
     '''
     Function to get rankings with respect to a list of targets
 
@@ -226,10 +226,10 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1):
     score_cols = []
     for cui in tqdm(cuis):
         name = cui2name[cui]+ '_raw_score'
-        score_cols.append(name)
+        # score_cols.append(name)
 
         try:
-            ura.aggregate(metric, cui, lambd=lambd)
+            ura.aggregate(metric, cui, lambd=lambd, theta=theta)
         except Exception as e:
             print(e)
             print(f"Removing cui for {cui2name[cui]} from list of targets")
@@ -249,9 +249,10 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1):
         rankings_df[col+'_raw_rank'] = rankings_df[col+'_raw_score'].rank(ascending=False)
 
     # Get average to create overall ranking
-    rankings_df = rankings_df[sorted(rankings_df.columns.tolist())]
-    rankings_df['overall_raw_score'] = rankings_df[score_cols].mean(axis=1)
-    rankings_df['overall_raw_rank'] = rankings_df['overall_raw_score'].rank(ascending=False)
+    if return_overall_ranking:
+        rankings_df = rankings_df[sorted(rankings_df.columns.tolist())]
+        rankings_df['overall_raw_score'] = rankings_df[score_cols].mean(axis=1)
+        rankings_df['overall_raw_rank'] = rankings_df['overall_raw_score'].rank(ascending=False)
 
     # Get rankings for all of the individual target columns
     # rankings_df[col+' rank'] = rankings_df[col].rank()
@@ -275,7 +276,7 @@ def get_all_scores(features, cuis, metric='hetesim',lambd=1):
 
 
 
-def high_importance_low_count(rankings, counts, max_path_length=2):
+def high_importance_low_count(rankings, counts, max_path_length=2, eps=.01):
     """
     Get list of nodes prioritized by the geometric mean of their rank and count of metapaths
     We generally consider metapaths of length 1 to indicate relationships present in the literature
@@ -294,7 +295,7 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
 
     """
     # Make sure we only have count data
-    counts = counts.loc[{'metric':'count'}].squeeze()
+    counts = counts.loc[{'metric':'count'}]
 
     # Get lengths of metapaths and mask of paths that work
     metapath_names = list(counts.get_index('metapath'))
@@ -306,16 +307,23 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
     # Get prioritized rankings for each target individually
     for cui in list(counts.get_index('target')):
         name = cui2name[cui]
+        if f'{name}_raw_score' not in rankings.columns:
+            print(f'{name} not found in rankings, moving to next target')
+            continue
         path_counts = counts.loc[{'target':cui,
                                   'metapath':mask}].sum(dim=['metapath']).to_dataframe(name=f'{name}_path_count')
+        # print(path_counts)
         path_counts = path_counts.drop(['target','metric'], axis=1)
         path_counts.index.name = 'CUI'
 
-        # # Get path counts and normalize
-        normalized_path_counts = path_counts / path_counts.max()
-        path_min = normalized_path_counts.min()
-        normalized_path_counts = (1 - normalized_path_counts) + path_min
+        # Get path counts and normalize
+        normalized_path_counts = (1/(path_counts + 1))**.5
+        # normalized_path_counts = path_counts / path_counts.max()
+        # path_min = normalized_path_counts.min()
+        # normalized_path_counts = (1 - normalized_path_counts) + path_min
+        # normalized_path_counts[normalized_path_counts < eps] += (normalized_path_counts[normalized_path_counts < eps] - eps)/eps
         normalized_path_counts = normalized_path_counts.rename(columns={f'{name}_path_count':f'{name}_normalized_path_count'})
+        # print(normalized_path_counts)
 
         # Add extra weight to sources directly connected to target
         # Weight is $(1 - nbhr_weight) is disconnected, 1 if connected
@@ -327,6 +335,8 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
         nbhr_flag = nbhr_weight * (nbhr_flag > 0).astype(float) + (1 - nbhr_weight)
         nbhr_flag.index.name = 'CUI'
 
+        if 'CUI' in rankings.columns:
+            rankings = rankings.set_index('CUI')
         rankings = rankings.join(path_counts)
         rankings = rankings.join(normalized_path_counts)
         rankings = rankings.join(nbhr_flag)
@@ -335,9 +345,12 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
 
         rankings[f'{name}_newness_score'] = stats.gmean(rankings[[f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
         rankings[f'{name}_novelty_score'] = stats.gmean(rankings[[f'{name}_raw_score', f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
+        # print(rankings)
         rankings[f'{name}_novelty_rank'] = rankings[f'{name}_novelty_score'].rank(ascending=False).astype(int)
 
         rankings = rankings.drop([f'{name}_normalized_path_count', f'{name}_nbhr_flag'], axis=1)
+        # rankings = rankings.drop([f'{name}_path_count'], axis=1)
+
 
     # Get overall novelty score/rank
     mean_novelty = pd.concat(novelty_weights, axis=1).mean(axis=1)
@@ -346,11 +359,62 @@ def high_importance_low_count(rankings, counts, max_path_length=2):
     novelty_agg['overall_novelty_rank'] = novelty_agg['overall_novelty_score'].rank(ascending=False)
     # display(novelty_agg.head())
     rankings = rankings.join(novelty_agg[['overall_novelty_score','overall_novelty_rank']])
-    rankings['overall_path_count'] = rankings.filter(regex='path_count$', axis=1).sum(axis=1)
+    # rankings['overall_path_count'] = rankings.filter(regex='path_count$', axis=1).sum(axis=1)
 
     cols = rankings.columns.tolist()
     rankings = rankings[['Name'] + sorted(cols[1:])]
 
     return rankings
 
-    # Keep only rankings above cutoff percentile
+
+def rankings_venn_diagram(rankings, 
+                          t1, 
+                          t2, 
+                          max_size=10, 
+                          ranking_type='raw'):
+    '''
+    Generate venn diagram of rankings to differentiate nodes that are mutually relevant
+    from those that are disease specific
+
+    Inputs:
+    ------------------------------
+        rankings: pandas.DataFrame
+            Rankings for a set of target nodes
+
+        t1, t2: string
+            CUIs of targets for which to make venn diagram
+
+        max_size: int
+            Maximum number of elements to include in section of Venn diagram
+
+    Returns:
+    -----------------------------
+        concept_subsets: dict
+            Dictionary with keys for each target and values that are  
+            sets of top concepts for each target
+    '''
+    # Get node specific rankings
+    r1 = rankings[f'{cui2name[t1]}_{ranking_type}_rank']
+    r2 = rankings[f'{cui2name[t2]}_{ranking_type}_rank']
+
+    # Determine which sources are concept specific
+    diff = r1 - r2
+
+    # t1_concepts = diff[(r1 < r1.quantile(.2))].rank().sort_values().head(10)
+    t1_concepts = (r1 + diff).sort_values().head(max_size)
+    t2_concepts = (r2 - diff).sort_values().head(max_size)
+    display(t1_concepts, t2_concepts)
+
+
+    # And which are 
+    intersection = (2 * np.abs(diff) + r1 + r2)
+    intersection_concepts = intersection[intersection < 200].sort_values().head(max_size)
+    display(intersection_concepts)
+
+    concept_dict = {cui2name[t1]: set(t1_concepts.index.tolist() + intersection_concepts.index.tolist()),
+                    cui2name[t2]: set(t2_concepts.index.tolist() + intersection_concepts.index.tolist())}
+
+    return concept_dict
+
+
+

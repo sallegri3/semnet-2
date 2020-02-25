@@ -20,6 +20,22 @@ import os
 #     writer.close()
 #
 def write_multisheet_excel(sheets, sheet_names, filepath, overwrite=True):
+    '''
+    Write multiple dataframes to a single excel workbook as multiple sheets
+
+    Inputs:
+        sheets: list of pandas.DataFrame
+            List of dataframes you want to put in an excel notebook
+
+        sheet_names: list of string
+            Names of sheets for excel notebook
+
+        filepath: string
+            Path to write excel notebook
+
+        overwrite: bool
+            Whether to overwrite a previous file with same name
+    '''
     if overwrite:
         if os.path.isfile(filepath):
             os.remove(filepath)
@@ -31,5 +47,5 @@ def write_multisheet_excel(sheets, sheet_names, filepath, overwrite=True):
             writer.book = book
         else:
             writer = pd.ExcelWriter(filepath, engine = 'openpyxl')
-        sheet.to_excel(writer, sheet_name=name.title())
+        sheet.to_excel(writer, sheet_name=name)
         writer.save()
