@@ -143,6 +143,8 @@ def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, file
     """
     Plot seaborn heatmap of hierarchical clustering with cosine similarity.
     """
+    # sns.set_palette("GnBu_d")
+
     # Reformat data to get desired vars and plot
     if source_subset:
         metapath_data = metapath_data.loc[{'source':source_subset}]
@@ -164,15 +166,15 @@ def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, file
     links = linkage(dist_array, optimal_ordering=True, method='complete')
     dist_df = pd.DataFrame(dist_matrix, index=df.index, columns=df.index)
 
-
     # Plot clustering
     from matplotlib import rcParams
     rcParams.update({'figure.autolayout': True})
-    sns.clustermap(dist_df, row_linkage=links, col_linkage=links, vmin=0, vmax=.75, xticklabels=True, yticklabels=True)
-    if type(target) == list:
-        plt.title("Multitarget Feature Correlation")
-    else:
-        plt.title(f"Feature Correlation for {cui2name[target]}")
+    # with sns.color_palette("PuBuGn_d"):
+    sns.clustermap(dist_df, row_linkage=links, col_linkage=links, vmin=0, vmax=.75, xticklabels=True, yticklabels=True, cmap='GnBu')
+    # if type(target) == list:
+    #     plt.title("Multitarget Feature Correlation")
+    # else:
+    #     plt.title(f"Feature Correlation for {cui2name[target]}")
     # plt.gcf().subplots_adjust(bottom=0.15)
 
     # Save figure if desired
