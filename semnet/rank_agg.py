@@ -393,26 +393,38 @@ def rankings_venn_diagram(rankings,
             Dictionary with keys for each target and values that are  
             sets of top concepts for each target
     '''
+    if t1 in cui2name.keys():
+        t1 = cui2name[t1]
+
+    if t2 in cui2name.keys():
+        t2 = cui2name[t2]
+
+    assert t1 in cui2name.values()
+    assert t2 in cui2name.values()
+
     # Get node specific rankings
-    r1 = rankings[f'{cui2name[t1]}_{ranking_type}_rank']
-    r2 = rankings[f'{cui2name[t2]}_{ranking_type}_rank']
+    r1 = rankings[f'{t1}_{ranking_type}_rank']
+    r2 = rankings[f'{t2}_{ranking_type}_rank']
 
     # Determine which sources are concept specific
     diff = r1 - r2
+    inv_diff = r2 - r1
 
-    # t1_concepts = diff[(r1 < r1.quantile(.2))].rank().sort_values().head(10)
-    t1_concepts = (r1 + diff).sort_values().head(max_size)
-    t2_concepts = (r2 - diff).sort_values().head(max_size)
+    t1_concepts = diff[(r1 < r1.quantile(.2))].sort_values().head(max_size)
+    t2_concepts = inv_diff[(r2 < r2.quantile(.2))].sort_values().head(max_size)
+    # t1_concepts = (r1 + diff).sort_values().head(max_size)
+    # t2_concepts = (r2 - diff).sort_values().head(max_size)
     display(t1_concepts, t2_concepts)
 
 
-    # And which are 
+    # And which are in the intersection
+    n = r1.shape[0]
     intersection = (2 * np.abs(diff) + r1 + r2)
-    intersection_concepts = intersection[intersection < 200].sort_values().head(max_size)
+    intersection_concepts = intersection[intersection < n/5].sort_values().head(max_size)
     display(intersection_concepts)
 
-    concept_dict = {cui2name[t1]: set(t1_concepts.index.tolist() + intersection_concepts.index.tolist()),
-                    cui2name[t2]: set(t2_concepts.index.tolist() + intersection_concepts.index.tolist())}
+    concept_dict = {t1: set(t1_concepts.index.tolist() + intersection_concepts.index.tolist()),
+                    t2: set(t2_concepts.index.tolist() + intersection_concepts.index.tolist())}
 
     return concept_dict
 
