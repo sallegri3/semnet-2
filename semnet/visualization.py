@@ -390,20 +390,99 @@ def ranking_correlation(rankings, method='kendall', savepath=None):
     plt.show()
 
 
+def rankings_venn_diagram_dict(rankings, 
+                                t1, 
+                                t2, 
+                                max_size=10, 
+                                ranking_type='raw'):
+    '''
+    Generate venn diagram of rankings to differentiate nodes that are mutually relevant
+    from those that are disease specific
+
+    Inputs:
+    ------------------------------
+        rankings: pandas.DataFrame
+            Rankings for a set of target nodes
+
+        t1, t2: string
+            CUIs of targets for which to make venn diagram
+
+        max_size: int
+            Maximum number of elements to include in section of Venn diagram
+
+    Returns:
+    -----------------------------
+        concept_subsets: dict
+            Dictionary with keys for each target and values that are  
+            sets of top concepts for each target
+    '''
+    if t1 in cui2name.keys():
+        t1 = cui2name[t1]
+
+    if t2 in cui2name.keys():
+        t2 = cui2name[t2]
+
+    assert t1 in cui2name.values()
+    assert t2 in cui2name.values()
+
+    # Get node specific rankings
+    r1 = rankings[f'{t1}_{ranking_type}_rank']
+    r2 = rankings[f'{t2}_{ranking_type}_rank']
+
+    # Determine which sources are concept specific
+    diff = r1 - r2
+    inv_diff = r2 - r1
+
+    t1_concepts = diff[(r1 < r1.quantile(.2))].sort_values().head(max_size)
+    t2_concepts = inv_diff[(r2 < r2.quantile(.2))].sort_values().head(max_size)
+    # t1_concepts = (r1 + diff).sort_values().head(max_size)
+    # t2_concepts = (r2 - diff).sort_values().head(max_size)
+    display(t1_concepts, t2_concepts)
+
+
+    # And which are in the intersection
+    n = r1.shape[0]
+    intersection = (2 * np.abs(diff) + r1 + r2)
+    intersection_concepts = intersection[intersection < n/5].sort_values().head(max_size)
+    display(intersection_concepts)
+
+    concept_dict = {t1: set(t1_concepts.index.tolist() + intersection_concepts.index.tolist()),
+                    t2: set(t2_concepts.index.tolist() + intersection_concepts.index.tolist())}
+
+    return concept_dict
 
 
 def venn_diagram(concept_dict, savepath=None):
     '''
     Make Venn diagram of overlap between different rankings
+
+    Inputs:
+    ------------------
+        concept_dict: dict
+            Dictionary of venn diagram contents output by 
+            rankings_venn_diagram_dict
     '''
     # Make venn diagram with concept dict
     (k1, v1), (k2, v2) = concept_dict.items()
     v = venn2([v1, v2], (k1, k2))
 
     # Plot labels inside of diagram
-    ppp = v.get_label_by_id('10').set_text('\n'.join(v1 - v2))
+    # ppp = v.get_label_by_id('10').set_text('\n'.join(v1 - v2))
     v.get_label_by_id('11').set_text('\n'.join(v1 & v2))
-    v.get_label_by_id('01').set_text('\n'.join(v2 - v1))
+    plt.annotate(',\n'.join(v1-v2), xy=v.get_label_by_id('10').get_position() +
+             np.array([0, 0.2]), xytext=(-20,40), ha='center',
+             textcoords='offset points', 
+             bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
+             arrowprops=dict(arrowstyle='->',              
+                             connectionstyle='arc',color='gray'))
+    plt.annotate(',\n'.join(v2-v1), xy=v.get_label_by_id('01').get_position() +
+             np.array([0, 0.2]), xytext=(-20,40), ha='center',
+             textcoords='offset points', 
+             bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
+             arrowprops=dict(arrowstyle='->',              
+                             connectionstyle='arc',color='gray'))
+    
+    # v.get_label_by_id('01').set_text('\n'.join(v2 - v1))
     if savepath:
         plt.savefig(savepath)
     plt.show()
