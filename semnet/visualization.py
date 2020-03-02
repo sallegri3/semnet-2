@@ -452,7 +452,7 @@ def rankings_venn_diagram_dict(rankings,
     return concept_dict
 
 
-def venn_diagram(concept_dict, savepath=None):
+def venn_diagram(concept_dict, savepath=None, offset_label=False):
     '''
     Make Venn diagram of overlap between different rankings
 
@@ -466,23 +466,33 @@ def venn_diagram(concept_dict, savepath=None):
     (k1, v1), (k2, v2) = concept_dict.items()
     v = venn2([v1, v2], (k1, k2))
 
-    # Plot labels inside of diagram
-    # ppp = v.get_label_by_id('10').set_text('\n'.join(v1 - v2))
-    v.get_label_by_id('11').set_text('\n'.join(v1 & v2))
-    plt.annotate(',\n'.join(v1-v2), xy=v.get_label_by_id('10').get_position() +
-             np.array([0, 0.2]), xytext=(-20,40), ha='center',
-             textcoords='offset points', 
-             bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
-             arrowprops=dict(arrowstyle='->',              
-                             connectionstyle='arc',color='gray'))
-    plt.annotate(',\n'.join(v2-v1), xy=v.get_label_by_id('01').get_position() +
-             np.array([0, 0.2]), xytext=(-20,40), ha='center',
-             textcoords='offset points', 
-             bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
-             arrowprops=dict(arrowstyle='->',              
-                             connectionstyle='arc',color='gray'))
+    # Plot middle labels inside of diagram
+    ppp = v.get_label_by_id('11').set_text('\n'.join(v1 & v2))
+
+    # If offset is desired, plot annotations in bubbles outside of plot
+    if offset_label:
+        v.get_label_by_id('10').set_text('')
+        v.get_label_by_id('01').set_text('')
+        plt.annotate(',\n'.join(v1-v2), xy=v.get_label_by_id('10').get_position() +
+                np.array([0, 0.2]), xytext=(-40,40), ha='center',
+                textcoords='offset points', 
+                bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
+                arrowprops=dict(arrowstyle='->',              
+                                connectionstyle='arc',color='gray'))
+        plt.annotate(',\n'.join(v2-v1), xy=v.get_label_by_id('01').get_position() +
+                np.array([0, 0.2]), xytext=(40,40), ha='center',
+                textcoords='offset points', 
+                bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
+                arrowprops=dict(arrowstyle='->',              
+                                connectionstyle='arc',color='gray'))
+
+    # Plot other labels inside of diagram if desired
+    else:
+        v.get_label_by_id('10').set_text('\n'.join(v1 - v2))
+        v.get_label_by_id('01').set_text('\n'.join(v2 - v1))
+
     
-    # v.get_label_by_id('01').set_text('\n'.join(v2 - v1))
+    
     if savepath:
         plt.savefig(savepath)
     plt.show()
