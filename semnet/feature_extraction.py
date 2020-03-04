@@ -25,8 +25,8 @@ class BaseFeatureExtractor(object):
   """
 
   def __init__(self):
-    #self.graph = Graph(password='j@ck3t5_m1tch311')
-    self.graph = Graph(password='Mitch-Lin')
+    # Credentials to neo4j graph
+    self.graph = Graph(password='')
 	
     
   def results_to_dataarray(self, sources, targets, results, metric):
