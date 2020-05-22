@@ -82,7 +82,7 @@ def get_nbhr_and_edge_types(target):
     return nbhr_counts, outgoing_edge_type_counts, incoming_edge_type_counts
 
 
-def plot_nbhd(target_list, filepath=None):
+def plot_nbhd(target_list, filepath=None, detailed=False, ntypes=12):
     """
     Plot visualization of neighborhood around a given set of target nodes
 
@@ -114,27 +114,36 @@ def plot_nbhd(target_list, filepath=None):
     ins = pd.concat(in_dfs, axis=1, sort=True)
     ins['avg_proportion'] = ins[proportion_cols].mean(axis=1)
 
-    for data, name in zip([nbhrs, outs, ins], ['Neighbors','Outgoing Edges','Incoming Edges']):
-        fig,(ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(30,10))
+    if detailed:
+        for data, name in zip([nbhrs, outs, ins], ['Neighbors','Outgoing Edges','Incoming Edges']):
+            fig,(ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(30,10))
 
-        # Plot counts
-        sorted_data = data.sort_values(by='avg_proportion', ascending=False)
-        sorted_data[count_cols].head(12).rename({col:col.split('_')[0] for col in count_cols}, axis=1).plot.barh(ax=ax1)
-        ax1.set_title(f"Count of {name} by Type")
+            # Plot counts
+            sorted_data = data.sort_values(by='avg_proportion', ascending=False)
+            sorted_data[count_cols].head(ntypes).rename({col:col.split('_')[0] for col in count_cols}, axis=1).plot.barh(ax=ax1)
+            ax1.set_title(f"Count of {name} by Type")
 
-        # Plot proportions
-        sorted_data[proportion_cols].rename({col:col.split('_')[0] for col in proportion_cols}, axis=1).head(12).plot.barh(ax=ax2)
-        ax2.set_title(f"Proportion of {name} by Type")
+            # Plot proportions
+            sorted_data[proportion_cols].rename({col:col.split('_')[0] for col in proportion_cols}, axis=1).head(ntypes).plot.barh(ax=ax2)
+            ax2.set_title(f"Proportion of {name} by Type")
 
-        # Plot total count
-        data[count_cols].rename({col:col.split('_')[0] for col in count_cols}, axis=1).sum().plot.bar(ax=ax0)
-        ax0.set_title(f"Total {name}")
+            # Plot total count
+            data[count_cols].rename({col:col.split('_')[0] for col in count_cols}, axis=1).sum().plot.bar(ax=ax0)
+            ax0.set_title(f"Total {name}")
 
-        plt.suptitle(f"Summary of {name} for Target Nodes")
+            plt.suptitle(f"Summary of {name} for Target Nodes")
 
-        if filepath is not None:
-            plt.savefig(f"{filepath}_{name.lower()}.png")
-
+            if filepath is not None:
+                plt.savefig(f"{filepath}_{name.lower()}.png")
+    else:
+        fig,(ax0, ax1, ax2) = plt.subplots(1,3, figsize=(24,7))
+        plt.suptitle(f"Summary of Node Neighborhood")
+        sns.set()
+        for data, name, ax in zip([nbhrs, ins, outs], ['Neighbors','Incoming Edges', 'Outgoing Edges'], [ax0, ax1, ax2]):
+            # Plot proportions
+            sorted_data = data.sort_values(by='avg_proportion', ascending=False)
+            sorted_data[proportion_cols].rename({col:col.split('_')[0] for col in proportion_cols}, axis=1).head(ntypes).plot.barh(ax=ax)
+            ax.set_title(f"Proportion of {name} by Type")
     plt.show()
 
 
@@ -288,7 +297,7 @@ def plot_metapath_distribution(metapath_data, metric='count', filepath=None):
 
     # Save figure if desired
     if filepath:
-        plt.savefig(f"{filepath}_{metric}_metapath_distribution.png")
+        plt.savefig(f"{filepath}_{metric}_metapath_distribution.png", bbox_inches='tight')
     plt.show()
 
 
@@ -371,7 +380,7 @@ def ranking_correlation(rankings, method='kendall', savepath=None):
     f, ax = plt.subplots(figsize=(11, 9))
 
     # Generate a custom diverging colormap
-    cmap = sns.diverging_palette(220, 10, as_cmap=True)
+    # cmap = sns.diverging_palette(220, 10, as_cmap=True)
 
     # Draw the heatmap with the mask and correct aspect ratio
     sns.heatmap(corr, 
@@ -382,10 +391,11 @@ def ranking_correlation(rankings, method='kendall', savepath=None):
                 # vmin=.4, 
                 square=True, 
                 linewidths=.5, 
-                cbar_kws={"shrink": .5})
+                cbar_kws={"shrink": .5}
+                )
 
     if savepath:
-        plt.savefig(savepath)
+        plt.savefig(savepath, bbox_inches='tight')
 
     plt.show()
 
@@ -394,7 +404,8 @@ def rankings_venn_diagram_dict(rankings,
                                 t1, 
                                 t2, 
                                 max_size=10, 
-                                ranking_type='raw'):
+                                ranking_type='raw',
+                                return_annotation=False):
     '''
     Generate venn diagram of rankings to differentiate nodes that are mutually relevant
     from those that are disease specific
@@ -426,12 +437,16 @@ def rankings_venn_diagram_dict(rankings,
     assert t2 in cui2name.values()
 
     # Get node specific rankings
-    r1 = rankings[f'{t1}_{ranking_type}_rank']
-    r2 = rankings[f'{t2}_{ranking_type}_rank']
+    n = rankings.shape[0]
+    r1 = rankings[f'{t1}_{ranking_type}_rank'] / n
+    r2 = rankings[f'{t2}_{ranking_type}_rank'] / n
+    
 
     # Determine which sources are concept specific
-    diff = r1 - r2
-    inv_diff = r2 - r1
+    diff = (r1 - r2)
+    inv_diff = (r2 - r1) 
+    # display(diff.sort_values())
+    # display(inv_diff.sort_values())
 
     t1_concepts = diff[(r1 < r1.quantile(.2))].sort_values().head(max_size)
     t2_concepts = inv_diff[(r2 < r2.quantile(.2))].sort_values().head(max_size)
@@ -441,18 +456,28 @@ def rankings_venn_diagram_dict(rankings,
 
 
     # And which are in the intersection
-    n = r1.shape[0]
-    intersection = (2 * np.abs(diff) + r1 + r2)
+    # n = r1.shape[0]
+    # intersection = (np.abs(diff) + r1 + r2)
+    intersection = r1 + r2
     intersection_concepts = intersection[intersection < n/5].sort_values().head(max_size)
     display(intersection_concepts)
+    
 
-    concept_dict = {t1: set(t1_concepts.index.tolist() + intersection_concepts.index.tolist()),
+    concept_dict = {t1: set(t1_concepts.index.tolist()+ intersection_concepts.index.tolist()),
                     t2: set(t2_concepts.index.tolist() + intersection_concepts.index.tolist())}
+        
+    # display(diff.sort_values().head().map(np.abs).to_dict())
+    # display(inv_diff.sort_values().head().map(np.abs).to_dict())
+                     
+    if return_annotation:
+        annotation_dict = {'left':t1_concepts.map(np.abs).to_dict(), 
+                        'right': t2_concepts.map(np.abs).to_dict(), 'intersection':intersection}
+        return concept_dict, annotation_dict
 
     return concept_dict
 
 
-def venn_diagram(concept_dict, savepath=None, offset_label=False):
+def venn_diagram(concept_dict, savepath=None, offset_label=False, annotation_dict=None):
     '''
     Make Venn diagram of overlap between different rankings
 
@@ -461,6 +486,12 @@ def venn_diagram(concept_dict, savepath=None, offset_label=False):
         concept_dict: dict
             Dictionary of venn diagram contents output by 
             rankings_venn_diagram_dict
+
+        savepath: string
+            Filepath to save output figure, if desired
+
+        offset_label: bool
+            Whether to move diagram labels outside of plot for added readability
     '''
     # Make venn diagram with concept dict
     (k1, v1), (k2, v2) = concept_dict.items()
@@ -473,13 +504,30 @@ def venn_diagram(concept_dict, savepath=None, offset_label=False):
     if offset_label:
         v.get_label_by_id('10').set_text('')
         v.get_label_by_id('01').set_text('')
-        plt.annotate(',\n'.join(v1-v2), xy=v.get_label_by_id('10').get_position() +
+
+        # Add proportion of difference to concepts
+        if annotation_dict:
+            sorted_left = sorted(list(v1 - v2), key=lambda x: annotation_dict['left'][x])[::-1]
+            sorted_right = sorted(list(v2-v1), key=lambda x: annotation_dict['right'][x])[::-1]
+
+            left_concepts = [f'{name}, {round(annotation_dict["left"][name], 3)}' for name in sorted_left]
+            right_concepts = [f'{name}, {round(annotation_dict["right"][name], 3)}' for name in sorted_right]
+
+            left_annotation = '\n'.join(left_concepts)
+            right_annotation = '\n'.join(right_concepts)
+        
+        else:
+            left_annotation = '\n'.join(v1-v2)
+            right_annotation = '\n'.join(v2-v1)
+
+        # Add annotations
+        plt.annotate(left_annotation, xy=v.get_label_by_id('10').get_position() +
                 np.array([0, 0.2]), xytext=(-40,40), ha='center',
                 textcoords='offset points', 
                 bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
                 arrowprops=dict(arrowstyle='->',              
                                 connectionstyle='arc',color='gray'))
-        plt.annotate(',\n'.join(v2-v1), xy=v.get_label_by_id('01').get_position() +
+        plt.annotate(right_annotation, xy=v.get_label_by_id('01').get_position() +
                 np.array([0, 0.2]), xytext=(40,40), ha='center',
                 textcoords='offset points', 
                 bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
@@ -494,7 +542,7 @@ def venn_diagram(concept_dict, savepath=None, offset_label=False):
     
     
     if savepath:
-        plt.savefig(savepath)
+        plt.savefig(savepath, bbox_inches='tight')
     plt.show()
 
 

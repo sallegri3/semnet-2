@@ -1,11 +1,7 @@
 '''
-Created by: David Kartchner
-Date: Jan 16, 2020
-Contact: david.kartchner@gatech.edu
-
-Utilities to connect to UMLS REST API and extract relevant information
+author: @davidkartchner
+created April 20, 2020
 '''
-
 import lxml.html as lh
 from lxml.html import fromstring
 import requests
@@ -82,7 +78,7 @@ def get_cuis_for_concept(concept_name, num_results=1000, return_names=False):
             returned if return_names == True.
     '''
     # Authenticate
-    API_KEY = ''
+    API_KEY = '784e30e6-1938-47c6-8479-d1c9b654c704'
     VERSION = 'current'
     AuthClient = Authentication(API_KEY)
 
