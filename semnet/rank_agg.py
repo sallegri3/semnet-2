@@ -11,6 +11,13 @@ ranking for each source node.
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tqdm import tqdm
+import os
+import pickle
+from scipy import stats
+
+_ROOT = os.path.abspath(os.path.dirname(__file__))
+cui2name = pickle.load(open(os.path.join(_ROOT, 'data/cui2name.pkl'),'rb'))
 
 class UnsupervisedRankAggregator(object):
     """
@@ -127,12 +134,15 @@ class UnsupervisedRankAggregator(object):
 
         return {mp: wt for mp, wt in zip(self.metapaths, self.weights)}
 
-    def get_scores(self):
+    def get_scores(self, cui_key=False):
         """ Returns a dictionary of source scores based on the learned ranking model. """
 
         scores = np.dot(self.rankings, self.weights)
         ranked_indices = np.argsort(scores)
-        ranked_sources = self.source_names[ranked_indices]
+        if cui_key:
+            ranked_sources = self.sources[ranked_indices]
+        else:
+            ranked_sources = self.source_names[ranked_indices]
         ranked_scores = sorted(scores)
         self.scores = {source:score for source, score in zip(ranked_sources, ranked_scores)}
 
@@ -171,7 +181,7 @@ def rank_by_feature(all_data, target, metric):
     n_sources = all_data.get_index('source').shape[0]
     features = all_data.loc[:, target, :, metric].values.T.reshape((-1, n_sources))
     for row in features:
-        ranks = np.array(pd.Series(row).rank(method='dense', ascending=False))
+        ranks = np.array(pd.Series(row).rank(method='dense', ascending=False)).astype(int)
 
         """
         # Generate randomized rankings to resolve ties
@@ -192,3 +202,168 @@ def rank_by_feature(all_data, target, metric):
     rankings = np.array(rankings).T
 
     return rankings, thresholds
+
+
+# Define function to get rankings w.r.t. a list of items
+def get_all_scores(features, cuis, metric='hetesim',lambd=1, theta=500, return_overall_ranking=False):
+    '''
+    Function to get rankings with respect to a list of targets
+
+    Inputs:
+    ----------------------------------------------------------
+        features: xarray.DataArray
+            DataArray containing feature extractor data
+
+        cuis: list of string
+            List of CUIs of targets for which we want rankings
+    '''
+    # Make rank aggregator
+    ura = UnsupervisedRankAggregator(features, cui2name)
+
+    # Get rankings in terms of each CUI
+    n_feats = features.metapath.shape[0]
+    rankings = []
+    score_cols = []
+    for cui in tqdm(cuis):
+        name = cui2name[cui]+ '_raw_score'
+        # score_cols.append(name)
+
+        try:
+            ura.aggregate(metric, cui, lambd=lambd, theta=theta)
+        except Exception as e:
+            print(e)
+            print(f"Removing cui for {cui2name[cui]} from list of targets")
+            cuis.remove(cui)
+            continue
+        curr_rankings = pd.Series(ura.get_scores(cui_key=True), name=name)
+        # curr_rankings -= curr_rankings.min()
+        curr_rankings /= curr_rankings.max()
+        curr_min = curr_rankings.min()
+        curr_rankings = (1 - curr_rankings) + curr_min
+        rankings.append(curr_rankings)
+
+    rankings_df = pd.concat(rankings, axis=1, sort=False)
+
+    # Get rankings for all of the individual target columns
+    for col in [cui2name[cui] for cui in cuis]:
+        rankings_df[col+'_raw_rank'] = rankings_df[col+'_raw_score'].rank(ascending=False)
+
+    # Get average to create overall ranking
+    if return_overall_ranking:
+        rankings_df = rankings_df[sorted(rankings_df.columns.tolist())]
+        rankings_df['overall_raw_score'] = rankings_df[score_cols].mean(axis=1)
+        rankings_df['overall_raw_rank'] = rankings_df['overall_raw_score'].rank(ascending=False)
+
+    # Get rankings for all of the individual target columns
+    # rankings_df[col+' rank'] = rankings_df[col].rank()
+    # for col in [cui2name[cui] for cui in cuis]:
+
+    # Get overall ranking and add to df
+    # if len(cuis) > 1:
+    #     ura.aggregate(metric, cuis, lambd=lambd, theta=len(cuis)*theta_frac*n_feats)
+    #     overall_score = pd.Series(ura.get_scores(cui_key=True), name='overall_score')
+    #     overall_score -= overall_score.min()
+    #     overall_score /= overall_score.max()
+    #     rankings_df = pd.concat([rankings_df, overall_score], axis=1, sort=False)
+    #     rankings_df['overall_rank'] = rankings_df['overall_score'].rank()
+
+    # Add medical names for each term and reorder so this is first column
+    rankings_df['Name'] = rankings_df.index.map(cui2name)
+    cols = rankings_df.columns.tolist()
+    rankings_df = rankings_df[['Name'] + cols[:-1]]
+    rankings_df.index.name = 'CUI'
+    return rankings_df
+
+
+
+def high_importance_low_count(rankings, counts, max_path_length=2, eps=.01):
+    """
+    Get list of nodes prioritized by the geometric mean of their rank and count of metapaths
+    We generally consider metapaths of length 1 to indicate relationships present in the literature
+
+    Inputs:
+        ranking: pandas.DataFrame
+            Dataframe of rankings produced by :get_all_scores:
+
+        Counts: xarray.DataArray
+            targets x sources x metapaths x metrics dataarray containing metapath counts for each source target pair
+
+        max_path_length: int
+            Max length of metapath to consider when reranking based on path connectivity
+
+    Returns:
+
+    """
+    # Make sure we only have count data
+    counts = counts.loc[{'metric':'count'}]
+
+    # Get lengths of metapaths and mask of paths that work
+    metapath_names = list(counts.get_index('metapath'))
+    metapath_lengths =np.array([s.count('>') + s.count('<') for s in metapath_names])
+    mask = (metapath_lengths <= max_path_length)
+
+    novelty_weights = []
+
+    # Get prioritized rankings for each target individually
+    for cui in list(counts.get_index('target')):
+        name = cui2name[cui]
+        if f'{name}_raw_score' not in rankings.columns:
+            print(f'{name} not found in rankings, moving to next target')
+            continue
+        path_counts = counts.loc[{'target':cui,
+                                  'metapath':mask}].sum(dim=['metapath']).to_dataframe(name=f'{name}_path_count')
+        # print(path_counts)
+        path_counts = path_counts.drop(['target','metric'], axis=1)
+        path_counts.index.name = 'CUI'
+
+        # Get path counts and normalize
+        normalized_path_counts = (1/(path_counts + 1))**.5
+        # normalized_path_counts = path_counts / path_counts.max()
+        # path_min = normalized_path_counts.min()
+        # normalized_path_counts = (1 - normalized_path_counts) + path_min
+        # normalized_path_counts[normalized_path_counts < eps] += (normalized_path_counts[normalized_path_counts < eps] - eps)/eps
+        normalized_path_counts = normalized_path_counts.rename(columns={f'{name}_path_count':f'{name}_normalized_path_count'})
+        # print(normalized_path_counts)
+
+        # Add extra weight to sources directly connected to target
+        # Weight is $(1 - nbhr_weight) is disconnected, 1 if connected
+        nbhr_mask = (metapath_lengths == 1)
+        nbhr_weight = .5
+        nbhr_flag = counts.loc[{'target':cui,
+                                  'metapath':mask}].sum(dim=['metapath']).to_dataframe(name=f'{name}_nbhr_flag')
+        nbhr_flag = nbhr_flag.drop(['target','metric'], axis=1)
+        nbhr_flag = nbhr_weight * (nbhr_flag > 0).astype(float) + (1 - nbhr_weight)
+        nbhr_flag.index.name = 'CUI'
+
+        if 'CUI' in rankings.columns:
+            rankings = rankings.set_index('CUI')
+        rankings = rankings.join(path_counts)
+        rankings = rankings.join(normalized_path_counts)
+        rankings = rankings.join(nbhr_flag)
+
+        novelty_weights.append(normalized_path_counts)
+
+        rankings[f'{name}_newness_score'] = stats.gmean(rankings[[f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
+        rankings[f'{name}_novelty_score'] = stats.gmean(rankings[[f'{name}_raw_score', f'{name}_normalized_path_count', f'{name}_nbhr_flag']], axis=1)
+        # print(rankings)
+        rankings[f'{name}_novelty_rank'] = rankings[f'{name}_novelty_score'].rank(ascending=False).astype(int)
+
+        rankings = rankings.drop([f'{name}_normalized_path_count', f'{name}_nbhr_flag'], axis=1)
+        # rankings = rankings.drop([f'{name}_path_count'], axis=1)
+
+
+    # Get overall novelty score/rank
+    mean_novelty = pd.concat(novelty_weights, axis=1).mean(axis=1)
+    novelty_agg = pd.concat([mean_novelty, rankings['overall_raw_score']], axis=1)
+    novelty_agg['overall_novelty_score'] = stats.gmean(novelty_agg, axis=1)
+    novelty_agg['overall_novelty_rank'] = novelty_agg['overall_novelty_score'].rank(ascending=False)
+    # display(novelty_agg.head())
+    rankings = rankings.join(novelty_agg[['overall_novelty_score','overall_novelty_rank']])
+    # rankings['overall_path_count'] = rankings.filter(regex='path_count$', axis=1).sum(axis=1)
+
+    cols = rankings.columns.tolist()
+    rankings = rankings[['Name'] + sorted(cols[1:])]
+
+    return rankings
+
+
