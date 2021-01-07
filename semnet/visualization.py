@@ -9,7 +9,7 @@ import os
 import pickle
 import seaborn as sns
 from sklearn.metrics import pairwise_distances
-from scipy.cluster.hierarchy import linkage
+from scipy.cluster.hierarchy import linkage, dendrogram, cut_tree
 from scipy.spatial.distance import pdist
 import numpy as np
 from semnet.utils import metapath_to_english
@@ -148,14 +148,14 @@ def plot_nbhd(target_list, filepath=None, detailed=False, ntypes=12):
 
 
 
-def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, filepath=None, agg='concat'):
+def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, filepath=None, csv_out_path=None):
     """
     Plot seaborn heatmap of hierarchical clustering with cosine similarity.
     """
     # sns.set_palette("GnBu_d")
 
     # Reformat data to get desired vars and plot
-    if source_subset:
+    if source_subset is not None:
         metapath_data = metapath_data.loc[{'source':source_subset}]
     data = metapath_data.loc[{'target':target, 'metric':metric}]
 
@@ -171,10 +171,14 @@ def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, file
     # Precompute distances for clustering
     dist_matrix = 1 - pairwise_distances(df, metric='cosine')
     np.fill_diagonal(dist_matrix, 0)
-    dist_array = pdist(df.values)
+    dist_array = pdist(df.values, metric='cosine')
+    # print(dist_array)
+    # print(dist_matrix)
     links = linkage(dist_array, optimal_ordering=True, method='complete')
 
     new_index = df.index.map(lambda x: x.split('|')[-1])
+    new_index = new_index.map(lambda x: ' '.join([word for word in x.split() if word not in ['gene','Gene']]))
+    # print(new_index)
     dist_df = pd.DataFrame(dist_matrix, index=new_index, columns=new_index)
 
     # Plot clustering
@@ -204,6 +208,44 @@ def plot_cosine_clusters(metapath_data, target, metric, source_subset=None, file
             plt.savefig(f"{filepath}_{cui2name[target]}_{metric}_cluster_heatmap.png", bbox_inches='tight')
 
     plt.show()
+
+    if csv_out_path is not None:
+        dist_df.to_csv(csv_out_path, index=False)
+
+
+def get_cluster_assignments(metapath_data, target, metric, source_subset=None, n_clusters=[4, 8, 12]):
+
+    if source_subset:
+        metapath_data = metapath_data.loc[{'source':source_subset}]
+    data = metapath_data.loc[{'target':target, 'metric':metric}]
+
+    if type(target) == list:
+        if agg=='sum':
+            data = data.sum(dim='target')
+        else:
+            data = data.stack(features=('target','metapath'))
+    # else:
+    #     data = data.stack(features=('metapath'))
+    df = pd.DataFrame(data.values, index = [cui2name[i] for i in data.get_index('source')])
+
+    # Precompute distances for clustering
+    dist_matrix = 1 - pairwise_distances(df, metric='cosine')
+    np.fill_diagonal(dist_matrix, 0)
+    dist_array = pdist(df.values)
+    links = linkage(dist_array, optimal_ordering=True, method='complete')
+
+    new_index = df.index.map(lambda x: x.split('|')[-1])
+    dist_df = pd.DataFrame(dist_matrix, index=new_index, columns=new_index)
+
+    cluster_assignments = cut_tree(links, n_clusters)
+
+    col_names = [f'{n}_clusters' for n in n_clusters]
+    cluster_df = pd.DataFrame(data=cluster_assignments, index=new_index, columns=col_names)
+
+    fig = plt.figure(figsize=(25, 10))
+    dn = dendrogram(links)
+    plt.show()
+    return cluster_df
 
 
 def vertex_pair_relationship(targets, source, filepath=None, signed_subset=False):
