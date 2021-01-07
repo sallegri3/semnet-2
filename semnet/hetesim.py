@@ -146,7 +146,7 @@ def decompose_along_edges(u_xy, revers=False):
 	# Iterate through the columns using the number of nonzeros in each column
 	for column, nnz in u_xy.astype(bool).sum(axis=0).iteritems():
 		# Get the indices of the nonzero elements
-		nz_int_ix = u_xy[column].nonzero()[0]
+		nz_int_ix = u_xy[column].to_numpy().nonzero()[0]
 		
 		# If there are more than one nonzero in the column, create multiple 
 		# columns in the edge df
