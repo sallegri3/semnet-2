@@ -84,31 +84,20 @@ def neo4j_rels_as_metapath(edge_types, node_types):
     # but sometimes subject may need to be swapped with predicate 
     # for the metapath.
 
-    # output_str = "Node Types: " + str(node_types) + '\n'
-    # output_str += "Metaedges:" + "\n\t".join([str(i) for i in metaedges]) + '\t'
     for i, metaedge in enumerate(metaedges):
         if i==0:
             # Match node type to database formatted string
             metaedge_source = str(metaedge.source).title().replace(' ', '')
             if metaedge_source != node_types[0]:
-                # output_str += "First block\n"
-                # output_str += f'{metaedge}\t{metaedge.inverse}\n'.replace(' ', '')
                 metaedges[i] = metaedge.inverse
-                # metaedges[i] = MetaEdge(metaedge.source, metaedge.target, )
         else:
             # Make sure we align endpoints of each path segment
             s = str(metaedge.source).title().replace(' ', '')
             t = str(metaedges[i-1].target).title().replace(' ', '')
             if s != t:
-                # output_str += 'Second block\n'
-                # output_str += f'{metaedge}\t{metaedge.inverse}\n'.replace(' ', '')
+
                 metaedges[i] = metaedge.inverse
         metapath = metagraph.get_metapath(tuple(metaedges))
         metapath_str = str(metapath)
-    # output_str += metapath_str +'\n'
-    # output_str += str(tuple([str(i).replace(' ','') for i in metaedges]))
-    # output_str += '\n******\n'
-    # if not metapath_str.startswith('BACS') or not metapath_str.endswith('DSYN'):
-    #     with open("../debug/metaedge_output.txt", 'a') as f:
-    #         f.write(output_str)
+
     return metapath
