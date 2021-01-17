@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='semnet',
-	version='0.1.0',
+	version='0.1.1',
 	description='A package for working with Semantic Medline data',
 	url='https://github.gatech.edu/asedler3/semnet',
 	author='Andrew Sedler',

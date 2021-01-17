@@ -8,11 +8,11 @@ representation of the metapaths between them.
 import xarray as xr
 import numpy as np
 from collections import Counter
+import os
+_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-#import hetio.readwrite
-from hetio import readwrite
+import hetio.readwrite
 import hetio.neo4j
-
 from py2neo import Graph
 
 from semnet.neo4j import build_metapath_query, execute_multithread_query
@@ -25,9 +25,7 @@ class BaseFeatureExtractor(object):
   """
 
   def __init__(self):
-    # Credentials to neo4j graph
-    self.graph = Graph(password='')
-	
+    self.graph = Graph(password='j@ck3t5_m1tch311')
     
   def results_to_dataarray(self, sources, targets, results, metric):
     """ 
@@ -167,11 +165,7 @@ class DwpcExtractor(BaseFeatureExtractor):
   
   def __init__(self):
     """ Load the metagraph and connect to Neo4j """
-    
-#    path = '../semnet/data/sem-net-mg_hetiofmt.json.gz'
-    import os
-    _ROOT = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(_ROOT,'data/sem-net-mg_hetiofmt.json.gz')
+    path = os.path.join(_ROOT, 'data/sem-net-mg_hetiofmt.json.gz')
     self.metagraph = hetio.readwrite.read_metagraph(path)
     super(DwpcExtractor, self).__init__()
   
@@ -203,8 +197,8 @@ class DwpcExtractor(BaseFeatureExtractor):
         A single-element list containing the dictionary of query results under 
         the ``DWPC`` key.
     """
-
     metapath = self.metagraph.get_metapath(metapath)
+        
     query = hetio.neo4j.construct_dwpc_query(metapath, 'identifier')
 
     params = {

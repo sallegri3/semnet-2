@@ -14,19 +14,15 @@ import xarray as xr
 
 from sklearn.metrics.pairwise import cosine_similarity
 
-#import hetio.neo4j
-from hetio import neo4j
-#import hetio.readwrite
-from hetio import readwrite
-import hetio.hetnet #added 7/8/19
+import hetio.neo4j
+import hetio.readwrite
 
 from semnet.neo4j import execute_multithread_query
 
 # Load the metagraph and fetch the metapath
-# path = '/usr/local/anaconda3/lib/python3.6/site-packages/semnet/data/sem-net-mg_hetiofmt.json.gz' #change this back if below fails
 import os
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-path = os.path.join(_ROOT,'data/sem-net-mg_hetiofmt.json.gz')
+path = os.path.join(_ROOT, 'data/sem-net-mg_hetiofmt.json.gz')
 metagraph = hetio.readwrite.read_metagraph(path)
 
 
@@ -56,7 +52,8 @@ def get_neighbors(sources, edge, graph):
 
 	assert isinstance(sources, list)
 
-	with gzip.open(os.path.join(_ROOT, 'data/cui2type.pkl.gz'), 'rb') as file:
+	path = os.path.join(_ROOT, 'data/cui2type.pkl.gz')
+	with gzip.open(path, 'rb') as file:
 		convert2type = pickle.load(file)
 
 	neighbors_list = []
@@ -149,7 +146,6 @@ def decompose_along_edges(u_xy, revers=False):
 	# Iterate through the columns using the number of nonzeros in each column
 	for column, nnz in u_xy.astype(bool).sum(axis=0).iteritems():
 		# Get the indices of the nonzero elements
-		##nz_int_ix = u_xy[column].nonzero()[0]
 		nz_int_ix = u_xy[column].to_numpy().nonzero()[0]
 		
 		# If there are more than one nonzero in the column, create multiple 
@@ -342,20 +338,8 @@ def compute_all_hetesim(source_list, target_list, metapath_list, graph, workers=
 
 	result = execute_multithread_query(compute_mp_hetesim, params=params, workers=workers)
 
-	# ADDEDED to debug 7/31/19	
-	print("result: ")
-	print("rows: " , len(result))
-	print("cols: " , len(result[0]))
-	print("dims: " , len(result[0][0]))
-	#print(result[0:2])
-	#dataa = np.array(result)
-	#print("dataa shape: ")
-	#print(dataa.shape)
-	####
-
-	#return hetesim_results_to_xr(result, source_list, target_list, metapath_list)
 	return hetesim_results_to_xr(source_list, target_list, result, metapath_list)
-	
+
 def hetesim_results_to_xr(source_list, target_list, results, metapath_list):
 	""" 
     Converts the results array of dicts into the structured ``xr.DataArray``
@@ -384,14 +368,8 @@ def hetesim_results_to_xr(source_list, target_list, results, metapath_list):
         A multi-dimensional, labeled array that contains the feature data.
     """
 
-	### ADDED to debug 7/31/2019
 	data = np.array(results)
-	print("data shape: ")
-	print(data.shape)
-	#print(data)
-	### 
-
-	data = np.swapaxes(np.swapaxes(data, 0, 2), 0, 1)
+	data = np.swapaxes(np.swapaxes(results, 0, 2), 0, 1)
 
 	s_type = metapath_list[0][:4]
 	t_type = metapath_list[0][-4:]
