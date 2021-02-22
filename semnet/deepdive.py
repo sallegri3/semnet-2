@@ -20,9 +20,10 @@ key = 'da79e005a4869dfef15528a82feb069ee908'
 # Load dict to convert node CUI to node type
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
-def get_paths_in_metapath(target, source, metapath):
+def get_paths_in_metapath(target, source, metapath, max_pmids=25, impact_factor_cutoff=1):
     '''
-    Get list of all paths making up a particular metapath
+    Get list of all paths making up a particular metapath, along with PMIDs 
+        from which each segment was taken.
 
     Inputs:
         target: str
@@ -33,6 +34,13 @@ def get_paths_in_metapath(target, source, metapath):
 
         metapath:
             String representation of metapath from source to target
+
+        max_pmids: int
+            Maximum number of PMIDs to return for a given edge
+
+        impact_factor_cutoff: float
+            Minimum impact factor for articles.  Articles published in journals with 
+                impact factor below this cutoff are not returned.       
 
     Returns:
         paths: list
@@ -88,7 +96,7 @@ def get_paths_in_metapath(target, source, metapath):
 
     # Get top PMIDs for each segment
     for i in range(m):
-        results[f'seg_{i+1}_pmids'] = results[f'pmid{i}'].apply(lambda x: filter_pmids(x.split(','), max_return=3, impact_cutoff=1))
+        results[f'seg_{i+1}_pmids'] = results[f'pmid{i}'].apply(lambda x: filter_pmids(x.split(','), max_return=max_pmids, impact_cutoff=impact_factor_cutoff))
     
     cols = ['endpoint','gene_or_aapp','meta_relationship','relationship'] + [f'seg_{i}_pmids' for i in range(1, m+1)]
     return results[cols]
