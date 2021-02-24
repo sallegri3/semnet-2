@@ -13,7 +13,6 @@ _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 import hetio.readwrite
 import hetio.neo4j
-import traceback
 from py2neo import Graph
 
 from semnet.neo4j import build_metapath_query, execute_multithread_query
@@ -198,12 +197,7 @@ class DwpcExtractor(BaseFeatureExtractor):
         A single-element list containing the dictionary of query results under 
         the ``DWPC`` key.
     """
-    try:
-        metapath = self.metagraph.get_metapath(metapath)
-    except Exception as e:
-        print("Exception!")
-        print(metapath)
-        traceback.print_tb()
+    metapath = self.metagraph.get_metapath(metapath)
         
     query = hetio.neo4j.construct_dwpc_query(metapath, 'identifier')
 

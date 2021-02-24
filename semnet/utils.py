@@ -1,6 +1,5 @@
 import xarray as xr
 import gzip
-from py2neo import Graph
 import pandas as pd
 import re
 import os
@@ -8,8 +7,11 @@ import pickle
 import seaborn as sns
 import numpy as np
 import requests
+
+from py2neo import Graph
 from fuzzywuzzy import process
 from fuzzywuzzy import fuzz
+from tqdm.auto import tqdm
 
 # Load Graph
 graph = Graph(password='Mitch-Lin')
@@ -110,6 +112,7 @@ def merge_path_segments(nodes, edges, directions):
 
 
 def get_pmid_info(pmid):
+    # This is simpler with entrez module
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
     params = {"db": 'pubmed', 'id': pmid, 'retmode':'json', 'api_key': key}
     r = requests.get(url=url, params=params)
@@ -125,7 +128,14 @@ def find_journal_match(journal_name, all_journals=all_journals, thresh=90):
         return None
 
 def get_article_info(pmid, relationship_str=None):
+    '''
+    Pulls metadata for a given PMID
+    '''
+    
     # Get metadata for each PMID
+    if pmid == 'covid':
+        return None
+
     data = get_pmid_info(pmid)['result'][str(pmid)]
 
     # Get publication info
@@ -175,3 +185,67 @@ def filter_pmids(pmids, impact_cutoff=2, date_cutoff=1970, max_return=None):
 
     else:
         return ';'.join(sorted_pmids.pmid.tolist())
+
+
+def filtered_pmid_dataframe(pmids, impact_cutoff=2, date_cutoff=1970, sort_col='date'):
+    '''
+    Create dataframe of info on PMIDs for articles satisfying impact factor 
+    and publication date cutoffs
+    '''
+    # Get info on each article
+    info = [get_article_info(pmid) for pmid in tqdm(pmids)]
+    filtered_info = [x for x in info if x is not None]
+
+    # Filter by journals that are relatively recent and credible
+    data = pd.DataFrame(filtered_info, columns=['pmid','title','journal','date','impact_factor'])
+    data['date'] = data['date'].astype(int)
+    # data['impact_factor'] = data['impact_factor'].astype(float)
+    filtered = data.query(f'(date >= {date_cutoff}) & (impact_factor >= {impact_cutoff})')
+    sorted_pmids = filtered.sort_values(by=sort_col,ascending=False)
+
+    return sorted_pmids
+
+
+def get_pmids_for_node(target, source=None):
+    '''
+    Get PMIDs corresponding to a particular node (or node pair) in Neo4j
+
+    Calculates this as union of PMIDs for all edges connected to a node, or 
+    union of PMIDs between two nodes for a pair
+    '''
+    
+    # Make param dict
+    t_type = convert2type[target]
+
+    if source is not None:
+        s_type = convert2type[source]
+        param_dict = {'target':target,
+                        't_type':t_type,
+                        'source':source,
+                        's_type':s_type}
+
+        # Make query to get vis results
+        q = """
+        MATCH (a:{t_type} {{identifier: '{target}'}}) - [r] - (b:{s_type} {{identifier: '{source}'}})
+        RETURN r.weight as count, r.predicate as relationship, r.pmid as pmid
+        """.format(**param_dict)
+    
+    else:
+        param_dict = {'target':target,
+                        't_type':t_type}
+
+        # Make query to get vis results
+        q = """
+        MATCH (a:{t_type} {{identifier: '{target}'}}) - [r] - (b)
+        RETURN r.weight as count, r.predicate as relationship, r.pmid as pmid
+        """.format(**param_dict)
+
+    # Pull data
+    cursor = graph.run(q)
+    results = pd.DataFrame(cursor.data())
+    cursor.close()
+
+    all_pmids = list(set([pmid for pmid_list in results.pmid.map(lambda x: 
+                 x[0].split(',')) for pmid in pmid_list]))
+
+    return all_pmids
