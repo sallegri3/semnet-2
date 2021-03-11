@@ -153,6 +153,17 @@ def standardize_nbhr_data(data,
     limited = data.loc[data.groupby(['end_node','start_node'])['weight'].idxmax()]
     return limited
 
+def remove_covid_nodes(df):
+    '''
+    Remove edges added from CORD-19 data
+    '''
+    covid_edge_mask = ( (df.start_type == df.start_type.map(lambda x: x.lower())) 
+                      & (df.end_type == df.end_type.map(lambda x: x.lower()))
+                      )
+    df = df[~covid_edge_mask]
+    return df
+
+
 def reverse_edges(data):
     '''
     Reverse edges in data that are listed as pointing in the wrong direction
@@ -242,7 +253,7 @@ def get_subgraph(node_cuis,
                     edge_downweight_factor=edge_downweight_factor)
 
     # Assemble final dataframe and prune by weight
-    final_data = nbhr_edges.dropna()
+    final_data = remove_covid_nodes(nbhr_edges.dropna())
     final_data = reverse_edges(final_data.drop('cui',axis=1))
     final_data = final_data.query(f'weight >= {min_weight}')
 
