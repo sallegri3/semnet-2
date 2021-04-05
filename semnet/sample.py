@@ -18,7 +18,7 @@ def get_negative_examples(examples, hold=None, seed=None):
 	"""
 	Randomly replaces either the source or the target node of the training example with another node of the same type in the network.
 
-	.. warning:: This function didn't end up working very well because the random replacement was typically not well connected with the example node that wasn't replaced. 
+	.. warning:: This function didn't end up working very well because the random replacement was typically not well connected with the example node that wasn't replaced.
 
 	Parameters
 	----------
@@ -64,10 +64,10 @@ def get_negative_examples(examples, hold=None, seed=None):
 
 def generate_negative_examples(examples, hold=None, seed=None):
 	"""
-	Randomly shuffles example pairs. 
+	Randomly shuffles example pairs.
 
 	.. note:: This function is more recent.
-	
+
 	Parameters
 	----------
 		examples: list of str pairs
