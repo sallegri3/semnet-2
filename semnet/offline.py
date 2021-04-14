@@ -40,6 +40,9 @@ class HetGraph():
             * end_type:     Node type of ending node
             * relation:    Relation between starting and ending node
             * weight:  Weight of edge (i.e. number of papers in which it appears)
+
+        TODO:
+            * Batch group nodes by type
         '''
         # Create dicts of outgoing and incoming edges
         logger.info("Constructing edge lists")
@@ -51,8 +54,8 @@ class HetGraph():
             relation = e['relation']
             weight = e['weight']
             
-            self.outgoing_edges[start_node][relation].add(end_node)
-            self.incoming_edges[end_node][relation].add(start_node)
+            self.outgoing_edges[start_node][relation][end_type].add(end_node)
+            self.incoming_edges[end_node][relation][start_type].add(start_node)
 
             # Get counts of how often node appears as each type (since it may have multiple categories)
             self.type_counts[start_node][start_type] += weight
@@ -81,12 +84,14 @@ class HetGraph():
         logger.info("Adding inverse outgoing edges")
         for node, d in tqdm(outgoing_edges.items()):
             for rel, neighbors in d:
+                # Note: Neighbors is a dict of format {nodetype:set(nodes)}
                 incoming_edges[node][rel2inv[rel]].add(neighbors)
 
         # Inverse edges from incoming
         logger.info("Adding inverse outgoing edges")
         for node, d in tqdm(incoming_edges.items()):
             for rel, neighbors in d:
+                # Note: Neighbors is a dict of format {nodetype:set(nodes)}
                 outgoing_edges[node][rel2inv[rel]].add(neighbors)
 
 
@@ -99,6 +104,7 @@ class HetGraph():
 
         TODO: Possible improvements:
             * Batch path enumeration by metapaths using DFS style search to speed up Hetesim
+                This will require us to compute elements to loop over, then run loop in reverse order
             * Compute metapaths at same time as paths
             * Parallelization
             * Optimization for using multiple sets of source/target nodes
@@ -109,39 +115,60 @@ class HetGraph():
         if length % 2 == 1:
             fan_out_depth += 1
 
-        for out_set, out_path in tqdm(self._fan_out(start_node, depth=fan_out_depth)):
-            for in_set, in_path in tqdm(self._fan_in(end_node, depth=fan_in_depth)):
-                middle_set = out_set.intersection(in_set)
-                for node in middle_set:
-                    yield self.merge_paths(out_set, node, in_set)
+        for out_dict, out_path in tqdm(self._fan_out(start_node, depth=fan_out_depth)):
+            for in_dict, in_path in tqdm(self._fan_in(end_node, depth=fan_in_depth)):
+                joint_types = set(out_dict.keys()).intersection(in_dict.keys())
+                for t in joint_types:
+                    middle_set = out_dict[t].intersection(in_dict[t])
+                    for node in middle_set:
+                        yield self._merge_paths(out_path, node, in_path)
 
 
-    def _fan_out(self, node, curr_path='', depth=1):
+    def _fan_out(self, node, curr_path=[], depth=1):
         '''
         Recursively compute all reachable target nodes by path of length 
             $DEPTH from $NODE.
 
         Only follows outgoing edges
+
+        Inputs:
+        -------
+            node: str
+                CUI string of node
+
+            curr_path: list
+                Path traversed so far to reach node
+
+            depth: int >= 0
+                Number of additional path segments to compute before returning
+
+        Returns:
+        --------
+            Iterator of:
+                next_nodes: Dict of terminal nodes at end of path
+                current_path: Path used to reach each node in next_nodes
         '''
         # If depth is 0, just return current node
+        # TODO: Update this to match output form of rest of function
         if depth == 0:
-            return node
+            return node, []
 
         # If depth is 1, return each set of neighbors and the path used to get there
         elif depth == 1:
             for (next_nodes, next_path) in self._get_edges_to_nbhrs(node):
                 current_path = self._merge_paths(curr_path, curr_node, next_path)
-                yield (current_path, next_nodes)
+                yield (next_nodes, current_path)
 
         # Otherwise, recursively travel down edges until we reach depth 1
         else:
-            for (next_nodes, next_path) in self._get_edges_to_nbhrs(node):
+            for (next_dict, next_path) in self._get_edges_to_nbhrs(node):
                 current_path = self._merge_paths(curr_path, curr_node, next_path)
-                for node in next_nodes:
-                    yield from _fan_out(node, curr_path=current_path, depth=depth-1)
+                for node_type in next_dict:
+                    for node in next_dict[node_type]:
+                        yield from _fan_out(node, curr_path=current_path, depth=depth-1)
 
 
-    def _fan_in(self, node, curr_path='', depth=1):
+    def _fan_in(self, node, curr_path=[], depth=1):
         '''
         Recursively compute all nodes $DEPTH steps away that feed into $NODE
 
@@ -152,16 +179,46 @@ class HetGraph():
 
     def _get_edges_to_nbhrs(self, node):
         '''
-        Create an iterator of the neighbors of $node with paths that lead to each
+        Create an iterator of the neighbors of $NODE with paths that lead to each
+
+        Inputs:
+        -------
+            node: str
+                CUI string of node
+
+        Returns:
+        --------
+            node_group: set
+                Set of nodes at end of edge segment
+
+            edge_type: list of str
+                Edge leading to next node group
         '''
-        raise NotImplementedError
+        # Get edges to next node
+        for edge_type, node_group in self.outgoing_edges[node].items():
+            # for node_type, node_set in node_group:
+            yield node_group, [edge_type]
 
 
     def _merge_paths(self, curr_path, curr_node, next_path):
         '''
         Merge path segments together 
         '''
-        raise NotImplementedError
+        return curr_path + [curr_node] + next_path
+
+
+    def _path_to_metapath(self, path):
+        '''
+        Get metapath from a path segment
+        '''
+        return [self.x2type[x] for x in path]
+
+
+    def _metapath_to_string(self, metapath):
+        '''
+        Turn metapath from list into string
+        '''
+        return '->'.join(metapath)
 
 
     def _score_metapath(self, metapath, path_instances=None):
