@@ -96,8 +96,8 @@ class HetGraph():
             self.node2type[node] = node_type
             self.type2nodes[node_type].add(node)
 
-        
-        self.x2type = {**self.node2type}
+        rel2self = {rel:rel for rel in self.relations}
+        self.x2type = {**self.node2type, **rel2self}
 
         
 
@@ -148,6 +148,7 @@ class HetGraph():
         for key, val in rel2inv.items():
             if key in self.relations:
                 self.relations.add(val)
+                self.x2type[key] = key
 
 
     def compute_fixed_length_paths(self, start_node, end_node, length=2):
