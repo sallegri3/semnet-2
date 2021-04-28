@@ -20,8 +20,9 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
         start_node: str
             cui of node to start from
 
-        metapath: tbd
+        metapath: list of strs
             metapath that constrains the node and edge types in the walk
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
 
         walk_forward: boolean
             if True, walk forward along (meta)path edges, starting from position 0 in metapath
@@ -34,7 +35,7 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
             node: the node arrived at when the end of the metapath is reached, or the dead end node
     """
 
-def randomized_hetesim(graph, start_rodes, end_nodes, metapath, epsilon, r, g):
+def randomized_hetesim(graph, start_rodes, end_nodes, metapaths, epsilon, r, g):
     """
     Randomized implementation of HeteSim,
     Computes an approximation to HeteSim for all pairs of start and end nodes.
@@ -55,8 +56,9 @@ def randomized_hetesim(graph, start_rodes, end_nodes, metapath, epsilon, r, g):
         end_node: list of str
             cuis of node 2, should have type matching last node of metapath
 
-        metapath: tbd
+        metapaths: list of list of str
             metapath on which to compute hetesim
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
 
         epsilon: float
             error tolerance
@@ -68,7 +70,7 @@ def randomized_hetesim(graph, start_rodes, end_nodes, metapath, epsilon, r, g):
             number of iterations to use in initial estimation of dead end probability (must have g>0)
     Returns:
     ________
-        scores: tdb
+        scores: xarray
             estimated value of HeteSim
     """
 
@@ -91,6 +93,7 @@ def _compute_approx_hs_vector_from_left(graph, start_node, metapath, epsilon, r,
         
         metapath: tbd
             metapath for which to approximate probability vector
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
             
         epsilon: float
             error tolerance
@@ -128,6 +131,7 @@ def _compute_approx_hs_vector_from_right(graph, end_node, metapath, epsilon, r, 
         
         metapath: tbd
             metapath for which to approximate probability vector
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
             
         epsilon: float
             error tolerance
@@ -144,7 +148,7 @@ def _compute_approx_hs_vector_from_right(graph, end_node, metapath, epsilon, r, 
         
     """
 
-def randomized_pruned_hetesim(graph, start_node, end_node, metapath, epsilon, r):
+def randomized_pruned_hetesim(graph, start_node, end_node, metapaths, epsilon, r):
     """
     computes a randomized approximation to pruned hetesim, using a just-in-time pruning strategy
     Let PH_e be the estimate returned by this functior.
@@ -162,8 +166,9 @@ def randomized_pruned_hetesim(graph, start_node, end_node, metapath, epsilon, r)
         end_node: str    
             node 2, type must match end of metapath
 
-        metapath: tbd
+        metapaths: list of list of str
             metapath on which to compute pruned hetesim
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
 
         epsilon: float
             error tolerance
@@ -208,14 +213,15 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
         end_node: str
             cui of end node
         
-        metapath: tbd
+        metapath: list of str
             metapath for which to approximate probability vector
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
             
         N: int
             number of random walks which must make it to the end of the metapath
         
     Outputs:
-        approx_hs_vector: tbd
+        approx_hs_vector: xarray
             approximate pruned hetesim probability vector for random walks along reverse of given metapath 
             from end_node
         
