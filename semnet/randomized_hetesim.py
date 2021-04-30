@@ -34,6 +34,36 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
             dead_end: True if the path hit a dead end; false if it made it to the end of the metapath
             node: the node arrived at when the end of the metapath is reached, or the dead end node
     """
+    
+    def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True):
+    """
+    take a random walk in graph along a specified metapath
+
+    Inputs:
+    ______
+        graph: Hetgraph
+            graph to walk on
+
+        start_node: str
+            cui of node to start from
+
+        metapath: list of strs
+            metapath that constrains the node and edge types in the walk
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
+
+        walk_forward: boolean
+            if True, walk forward along (meta)path edges, starting from position 0 in metapath
+            if False, walk backward on path edges, starting from end of metapath
+            
+        bad_nodes: list of sets
+            bad_nodes[i] is a set giving all nodes that are dead-ends at step i
+
+    Returns:
+    ________
+        (depth, node): (bool, str)
+            depth: number of steps taken; if depth == length of metapath, then we have successfully reached the end of the metapath
+            node: the node arrived at when the end of the metapath is reached, or the dead end node
+    """
 
 def randomized_hetesim(graph, start_rodes, end_nodes, metapaths, k_left, k_right, epsilon, r, g):
     """
