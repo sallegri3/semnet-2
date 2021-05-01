@@ -34,6 +34,32 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
             dead_end: True if the path hit a dead end; false if it made it to the end of the metapath
             node: the node arrived at when the end of the metapath is reached, or the dead end node
     """
+    path_len = (len(metapath)-1)/2
+    i=1
+    cur_node = start_node
+    if walk_forward:
+        neighbors = list( graph.outgoing_edges[curr_node][metapath[2*i -1]][metapath[2*i]] ) # set of neighbors of curr_node under the next relation in the metapath
+    else:
+        neighbors = list( graph.incoming_edges[curr_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] )
+    
+    while i <= path_len and len(neighbors) > 0:
+        if walk_forward:
+            edge_weights = [graph.incoming_edge_weights[cur_node][metapath[2*i - 1]][y] for y in neighbors]
+        else:
+            edge_weights = [graph.outgoing_edge_weights[cur_node][metapath[2*path_len + 1 - 2*i]][y] for y in neighbors]
+    
+        cur_node = random.choices(neighbors, weights=edge_weights) 
+        i+=1
+
+        if i == path_len +1:
+            return (false, cur_node)
+
+        if walk_forward: 
+            neighbors = list( graph.outgoing_edges[curr_node][metapath[2*i -1]][metapath[2*i]] ) # set of neighbors of curr_node under the next relation in the metapath
+        else:
+            neighbors = list( graph.incoming_edges[curr_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] )
+        
+    return (true, cur_node)
     
     def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True):
     """
