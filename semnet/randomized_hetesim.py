@@ -161,8 +161,10 @@ def randomized_hetesim(graph, start_rodes, end_nodes, metapaths, k_left, k_right
     Returns:
     ________
         scores: xarray
-            estimated value of HeteSim
+            estimated value of HeteSim, or -1 if g wasn't big enough
     """
+
+    
 
 def _compute_approx_hs_vector_from_left(graph, start_node, metapath, epsilon, r, g):
     """
