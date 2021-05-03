@@ -274,6 +274,9 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
         r: float
             probability of being within error tolerance
     """
+    
+
+
 def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     """
     computes an approximation to the probability vector used in computing pruned hetesim,
@@ -293,11 +296,35 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
             number of random walks which must make it to the end of the metapath
         
     Outputs:
-        approx_hs_vector: xarray
+        approx_hs_vector: pandas df
             approximate pruned hetesim probability vector for random walks along given metapath from start_node
         
     """
+    path_len = (len(metapath)-1)/2
     
+    # set up dictionary to hold frequencies of encountering each node
+    node_freqs = {}    
+
+    # set up list of bad / dead end nodes, for each step of the path
+    bad_nodes = [set() for i in range(path_len)]
+
+    num_successes = 0
+    while num_successes < N:
+        # take a walk, avoiding bad nodes
+        (depth, node) = restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True)
+        if depth == path_len: # reached end of mp / middle layer
+            num_successes += 1
+            if node_freqs.has_key(node):
+                node_freqs[node] += 1
+            else
+                node_freqs[node] = 1
+        else: # got stuck at a dead end
+            bad_nodes[depth].add(node)
+    prob_df =  pd.DataFrame(list(node_freqs)), columns=['node', 'prob'])
+    prob_df['prob'] = prob_df['prob'].div(N) 
+    return prob_df
+
+
 def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     """
     computes an approximation to the probability vector used in computing pruned hetesim,
@@ -319,8 +346,32 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
             number of random walks which must make it to the end of the metapath
         
     Outputs:
-        approx_hs_vector: xarray
+        approx_hs_vector: pandas df
             approximate pruned hetesim probability vector for random walks along reverse of given metapath 
             from end_node
         
     """
+    
+    path_len = (len(metapath)-1)/2
+    
+    # set up dictionary to hold frequencies of encountering each node
+    node_freqs = {}    
+
+    # set up list of bad / dead end nodes, for each step of the path
+    bad_nodes = [set() for i in range(path_len)]
+
+    num_successes = 0
+    while num_successes < N:
+        # take a walk, avoiding bad nodes
+        (depth, node) = restricted_random_walk_on_metapath(graph, end_node, metapath, bad_nodes, walk_forward=False)
+        if depth == path_len: # reached end of mp / middle layer
+            num_successes += 1
+            if node_freqs.has_key(node):
+                node_freqs[node] += 1
+            else
+                node_freqs[node] = 1
+        else: # got stuck at a dead end
+            bad_nodes[depth].add(node)
+    prob_df =  pd.DataFrame(list(node_freqs)), columns=['node', 'prob'])
+    prob_df['prob'] = prob_df['prob'].div(N) 
+    return prob_df
