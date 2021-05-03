@@ -4,9 +4,12 @@ It is designed to work with the datastructure HetGraph given in offline.py
 """
 
 # imports
+import math
+import random
 import numpy as np
+import pandas as pd
 
-from semnet.offline import HetGraph
+
 
 def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
     """
@@ -35,7 +38,7 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
             node: the node arrived at when the end of the metapath is reached, or the dead end node
     """
 
-    path_len = (len(metapath)-1)/2
+    path_len = int((len(metapath)-1)/2)
     i=1
     cur_node = start_node
     if walk_forward:
@@ -62,7 +65,7 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
         
     return (true, cur_node)
     
-    def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True):
+def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True):
     """
     take a random walk in graph along a specified metapath
 
@@ -92,13 +95,13 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
             node: the node arrived at when the end of the metapath is reached, or the dead end node
     """
 
-    path_len = (len(metapath)-1)/2
+    path_len = int((len(metapath)-1)/2)
     i=1
     cur_node = start_node
     if walk_forward:
-        neighbors = list( graph.outgoing_edges[curr_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i] ) # set of neighbors of curr_node under the next relation in the metapath, except those in bad_nodes
+        neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i] ) # set of neighbors of cur_node under the next relation in the metapath, except those in bad_nodes
     else:
-        neighbors = list( graph.incoming_edges[curr_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i] )
+        neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i] )
     
     while i <= path_len and len(neighbors) > 0:
         if walk_forward:
@@ -106,16 +109,16 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
         else:
             edge_weights = [graph.outgoing_edge_weights[cur_node][metapath[2*path_len + 1 - 2*i]][y] for y in neighbors]
     
-        cur_node = random.choices(neighbors, weights=edge_weights) 
+        cur_node = random.choices(neighbors, weights=edge_weights)[0] 
         i+=1
 
         if i == path_len +1:
             return (i-1, cur_node)
 
         if walk_forward: 
-            neighbors = list( graph.outgoing_edges[curr_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i-1]) 
+            neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i-1]) 
         else:
-            neighbors = list( graph.incoming_edges[curr_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i])
+            neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i])
         
     return (i-1, cur_node)
     
@@ -276,12 +279,12 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
             probability of being within error tolerance
     """
     
-    c = (5 + 2*sqrt(5))/2
-    C = 2*(c + sqrt(c**2+4*epsilon))**2 + epsilon*(c+sqrt(c**2+4*epsilon))
+    c = (5 + 2*math.sqrt(5))/2
+    C = 2*(c + math.sqrt(c**2+4*epsilon))**2 + epsilon*(c+math.sqrt(c**2+4*epsilon))
     N = math.ceil(math.ceil(C/(epsilon**2))*k_max*math.log(4*k_max/(1-r)))
     
     # figure out what the set of first halves of metapaths is
-    path_len = (len(metapaths[0])-1)/2
+    path_len = int((len(metapaths[0])-1)/2)
     left_halves = []
     for mp in metapaths:
         left_mp = mp[0:path_len + 2]
@@ -350,7 +353,7 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
            approximate pruned hetesim probability vector for random walks along given metapath from start_node
         
     """
-    path_len = (len(metapath)-1)/2
+    path_len = int((len(metapath)-1)/2)
     
     # set up dictionary to hold frequencies of encountering each node
     node_freqs = {}    
@@ -364,9 +367,9 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
         (depth, node) = restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True)
         if depth == path_len: # reached end of mp / middle layer
             num_successes += 1
-            if node_freqs.has_key(node):
+            if node in node_freqs:
                 node_freqs[node] += 1
-            else
+            else:
                 node_freqs[node] = 1
         else: # got stuck at a dead end
             bad_nodes[depth].add(node)
@@ -380,14 +383,14 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     return node_freqs
 
 def _cos_similarity(vec_1, vec_2):
-    #compute length of the two vectors
-    vec_1_len = math.sqrt(sum[p**2 for p in vec_1.values()])
-    vec_2_len = math.sqrt(sum[p**2 for p in vec_2.values()])
+    # compute length of the two vectors
+    vec_1_len = math.sqrt(math.fsum([j**2 for j in vec_1.values()]))
+    vec_2_len = math.sqrt(math.fsum([j**2 for j in vec_2.values()]))
 
     # compute the dot product
     dot_prod = 0
     for k in vec_1.keys():
-        if vec_2.has_key(k):
+        if k in vec_2:
             dot_prod += vec_1[k] * vec_2[k]
     
     return dot_prod / (vec_1_len * vec_2_len)
@@ -423,7 +426,7 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
         
     """
     
-    path_len = (len(metapath)-1)/2
+    path_len = int((len(metapath)-1)/2)
     
     # set up dictionary to hold frequencies of encountering each node
     node_freqs = {}    
@@ -437,12 +440,12 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
         (depth, node) = restricted_random_walk_on_metapath(graph, end_node, metapath, bad_nodes, walk_forward=False)
         if depth == path_len: # reached end of mp / middle layer
             num_successes += 1
-            if node_freqs.has_key(node):
+            if node in node_freqs:
                 node_freqs[node] += 1
-            else
+            else:
                 node_freqs[node] = 1
         else: # got stuck at a dead end
             bad_nodes[depth].add(node)
-    prob_df =  pd.DataFrame(list(node_freqs)), columns=['node', 'prob'])
+    prob_df =  pd.DataFrame(list(node_freqs), columns=['node', 'prob'])
     prob_df['prob'] = prob_df['prob'].div(N) 
     return prob_df
