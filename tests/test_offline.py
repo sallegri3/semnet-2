@@ -6,7 +6,7 @@ import networkx as nx
 from tqdm.auto import tqdm, trange
 # from semnet.offline import HetGraph
 
-sys.path.insert(0,'/Users/davidspencerkartchner/research/semnet/semnet/')
+sys.path.insert(0,'/nethome/akirkpatrick3/semnet/semnet')
 from offline import HetGraph
 
 # Create toy graph with 6 nodes, 2 node types, 2 relation types
@@ -52,6 +52,7 @@ def test_constructor():
     # assert len(hg.node2type)
     assert len(hg.outgoing_edges['a']) == 2
     assert len(hg.incoming_edges['b']) == 2
+    assert hg.outgoing_edge_weights['a']['r1']['b'] == 1
 
 
 def test_inverse_edges():
