@@ -380,17 +380,17 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
             else:
                 node_freqs[node] = 1
         else: # got stuck at a dead end
-            bad_nodes[depth].add(node)
-    #prob_df =  pd.DataFrame(list(node_freqs)), columns=['node', 'prob'])
-    #prob_df['prob'] = prob_df['prob'].div(N) 
-    #return prob_df
-    
+            print("found dead end: " + node + ", adding to bad nodes: ")
+            bad_nodes[depth-1].add(node)
+            print(bad_nodes)
     for node in node_freqs:
         node_freqs[node]/=N
 
     return node_freqs
 
 def _cos_similarity(vec_1, vec_2):
+    #print('vec_1' + str(vec_1))
+    #print('vec_2' + str(vec_2))
     # compute length of the two vectors
     vec_1_len = math.sqrt(math.fsum([j**2 for j in vec_1.values()]))
     vec_2_len = math.sqrt(math.fsum([j**2 for j in vec_2.values()]))
@@ -453,6 +453,7 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
             else:
                 node_freqs[node] = 1
         else: # got stuck at a dead end
-            bad_nodes[depth].add(node)
-    node_freqs[node]/=N
+            bad_nodes[depth-1].add(node)
+    for node in node_freqs:
+        node_freqs[node]/=N
     return node_freqs

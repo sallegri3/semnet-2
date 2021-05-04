@@ -18,9 +18,14 @@ def test_randomized_pruned_hetesim(tg1, tg2, tg3):
     r = 0.95
     # for each graph, run the algorithm 100 times
     mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']
+    mp2 = ['t1', 'r1', 't2', 'r1', 't3', 'r1', 't4', 'r1', 't5', 'r1', 't6', 'r1', 't7']
+    mp3 = ['t1', 'r1', 't2', 'r1', 't1', 'r2', 't1', 'r3', 't1']
+    #for i in range(100):
+    #    print(randomized_pruned_hetesim(tg1, ['s'], ['t'],  [mp1], 3, epsilon, r)[str(mp1)]['s']['t'])   
+    #for i in range(100):
+    #    print(randomized_pruned_hetesim(tg2, ['s'], ['t'], [mp2], 2, epsilon, r)[str(mp2)]['s']['t'])
     for i in range(100):
-        print(randomized_pruned_hetesim(tg1, ['s'], ['t'],  [mp1], 3, epsilon, r)[str(mp1)]['s']['t'])   
-
+        print(randomized_pruned_hetesim(tg3, ['s'], ['t'], [mp3], 3, epsilon, r)[str(mp3)]['s']['t'])
 
 
 if __name__ == '__main__':
