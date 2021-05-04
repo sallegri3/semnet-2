@@ -96,19 +96,23 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
     """
 
     path_len = int((len(metapath)-1)/2)
+    #print(metapath)
+    #print(path_len)
     i=1
     cur_node = start_node
     if walk_forward:
-        neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i] ) # set of neighbors of cur_node under the next relation in the metapath, except those in bad_nodes
+        neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i-1] ) # set of neighbors of cur_node under the next relation in the metapath, except those in bad_nodes
     else:
-        neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i] )
-    
+        neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i-1] )
+    #print(cur_node)
+    #print(neighbors) 
     while i <= path_len and len(neighbors) > 0:
         if walk_forward:
-            edge_weights = [graph.incoming_edge_weights[cur_node][metapath[2*i - 1]][y] for y in neighbors]
+            edge_weights = [graph.outgoing_edge_weights[cur_node][metapath[2*i - 1]][y] for y in neighbors]
         else:
-            edge_weights = [graph.outgoing_edge_weights[cur_node][metapath[2*path_len + 1 - 2*i]][y] for y in neighbors]
+            edge_weights = [graph.incoming_edge_weights[cur_node][metapath[2*path_len + 1 - 2*i]][y] for y in neighbors]
     
+        #print(edge_weights)
         cur_node = random.choices(neighbors, weights=edge_weights)[0] 
         i+=1
 
@@ -118,8 +122,10 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
         if walk_forward: 
             neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i-1]) 
         else:
-            neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i])
-        
+            neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i-1])
+        #print(cur_node)
+        #print(neighbors)        
+
     return (i-1, cur_node)
     
 def randomized_hetesim(graph, start_rodes, end_nodes, metapaths, k_max, epsilon, r, g):
@@ -287,22 +293,23 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
     path_len = int((len(metapaths[0])-1)/2)
     left_halves = []
     for mp in metapaths:
-        left_mp = mp[0:path_len + 2]
+        left_mp = mp[0:path_len + 1]
         if not left_mp in left_halves:
             left_halves.append(left_mp)
 
-    node_probs_left = {}
+    node_prob_left = {}
     # compute vectors from left    
     for lh in left_halves:
         fixed_mp_dict = {}
         for  s in start_nodes:
             fixed_mp_dict[s] =  _compute_approx_pruned_hs_vector_from_left(graph, s, lh, N)
-        node_probs_left[str(lh)] = fixed_mp_dict
+            #print(fixed_mp_dict[s])
+        node_prob_left[str(lh)] = fixed_mp_dict
 
     # figure out what the set of second halves of metapaths is
     right_halves= []
     for mp in metapaths:
-        right_mp = mp[path_len + 1:]
+        right_mp = mp[path_len:]
         if not right_mp in right_halves:
             right_halves.append(right_mp)
 
@@ -312,20 +319,21 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
         fixed_mp_dict = {}
         for  t in end_nodes:
             fixed_mp_dict[t] =  _compute_approx_pruned_hs_vector_from_right(graph, t, rh, N)
-        node_probs_right[str(rh)] = fixed_mp_dict
+            #print(fixed_mp_dict[t])
+        node_prob_right[str(rh)] = fixed_mp_dict
 
     # create output dict phs[mp][s][t] 
     phs =  {}
     for mp in metapaths:
-        left_half = str(mp[0:path_len+2])
-        right_half =  str(mp[path_len+1:])
+        left_half = str(mp[0:path_len+1])
+        right_half =  str(mp[path_len:])
         fixed_mp_dict = {}
         for s in start_nodes:
             fixed_s_dict = {}
             for t in end_nodes:
                 fixed_s_dict[t] = _cos_similarity(node_prob_left[left_half][s], node_prob_right[right_half][t])
-            fixed_mp_dict[str(mp)] = fixed_s_dict
-        phs[mp] = fixed_mp_dict
+            fixed_mp_dict[s] = fixed_s_dict
+        phs[str(mp)] = fixed_mp_dict
         
     return phs
 
@@ -446,6 +454,5 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
                 node_freqs[node] = 1
         else: # got stuck at a dead end
             bad_nodes[depth].add(node)
-    prob_df =  pd.DataFrame(list(node_freqs), columns=['node', 'prob'])
-    prob_df['prob'] = prob_df['prob'].div(N) 
-    return prob_df
+    node_freqs[node]/=N
+    return node_freqs
