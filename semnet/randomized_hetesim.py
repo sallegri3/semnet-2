@@ -67,7 +67,7 @@ def random_walk_on_metapath(graph, start_node, metapath, walk_forward=True):
     
 def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True):
     """
-    take a random walk in graph along a specified metapath
+    take a random walk in graph along a specified metapath, backtracking if you find a dead end
 
     Inputs:
     ______
@@ -90,7 +90,7 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
 
     Returns:
     ________
-        (depth, node): (bool, str)
+        (bad_nodes, node): (list of lists, str)
             depth: number of steps taken; if depth == length of metapath, then we have successfully reached the end of the metapath
             node: the node arrived at when the end of the metapath is reached, or the dead end node
     """
@@ -99,34 +99,40 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
     #print(metapath)
     #print(path_len)
     i=1
+    node_stack=[]
     cur_node = start_node
-    if walk_forward:
-        neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i-1] ) # set of neighbors of cur_node under the next relation in the metapath, except those in bad_nodes
-    else:
-        neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i-1] )
-    #print(cur_node)
-    #print(neighbors) 
-    while i <= path_len and len(neighbors) > 0:
+
+    while i>0:
+        #print("i:  " + str(i))
+        #print("cur_node: " + cur_node)
+        #print("node_stack: " + str(node_stack))
+        #print("bad_nodes: " + str(bad_nodes))
+        if i==path_len+1:
+            return (bad_nodes, cur_node)
+
         if walk_forward:
-            edge_weights = [graph.outgoing_edge_weights[cur_node][metapath[2*i - 1]][y] for y in neighbors]
+            neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i-1] ) # set of neighbors of cur_node under the next relation in the metapath, except those in bad_nodes
         else:
-            edge_weights = [graph.incoming_edge_weights[cur_node][metapath[2*path_len + 1 - 2*i]][y] for y in neighbors]
+            neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i-1] )
+        #print("neighbors: " + str(neighbors))
+        
+        #step forward if we can
+        if len(neighbors) >0:
+            if walk_forward:
+                edge_weights = [graph.outgoing_edge_weights[cur_node][metapath[2*i - 1]][y] for y in neighbors]
+            else:
+                edge_weights = [graph.incoming_edge_weights[cur_node][metapath[2*path_len + 1 - 2*i]][y] for y in neighbors]
     
-        #print(edge_weights)
-        cur_node = random.choices(neighbors, weights=edge_weights)[0] 
-        i+=1
+            #print(edge_weights)
+            node_stack.append(cur_node)
+            cur_node = random.choices(neighbors, weights=edge_weights)[0] 
+            i+=1
+        else: #cur_node is dead end
+            bad_nodes[i-2].add(cur_node)
+            cur_node = node_stack.pop()
+            i-=1
+    return 0
 
-        if i == path_len +1:
-            return (i-1, cur_node)
-
-        if walk_forward: 
-            neighbors = list( graph.outgoing_edges[cur_node][metapath[2*i -1]][metapath[2*i]] - bad_nodes[i-1]) 
-        else:
-            neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i-1])
-        #print(cur_node)
-        #print(neighbors)        
-
-    return (i-1, cur_node)
     
 def randomized_hetesim(graph, start_rodes, end_nodes, metapaths, k_max, epsilon, r, g):
     """
@@ -372,17 +378,14 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     num_successes = 0
     while num_successes < N:
         # take a walk, avoiding bad nodes
-        (depth, node) = restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True)
-        if depth == path_len: # reached end of mp / middle layer
-            num_successes += 1
-            if node in node_freqs:
-                node_freqs[node] += 1
-            else:
-                node_freqs[node] = 1
-        else: # got stuck at a dead end
-            print("found dead end: " + node + ", adding to bad nodes: ")
-            bad_nodes[depth-1].add(node)
-            print(bad_nodes)
+        (new_bad_nodes, node) = restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True)
+        num_successes += 1
+        if node in node_freqs:
+            node_freqs[node] += 1
+        else:
+            node_freqs[node] = 1
+        bad_nodes=new_bad_nodes
+
     for node in node_freqs:
         node_freqs[node]/=N
 
@@ -445,15 +448,14 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     num_successes = 0
     while num_successes < N:
         # take a walk, avoiding bad nodes
-        (depth, node) = restricted_random_walk_on_metapath(graph, end_node, metapath, bad_nodes, walk_forward=False)
-        if depth == path_len: # reached end of mp / middle layer
-            num_successes += 1
-            if node in node_freqs:
-                node_freqs[node] += 1
-            else:
-                node_freqs[node] = 1
-        else: # got stuck at a dead end
-            bad_nodes[depth-1].add(node)
+        (new_bad_nodes, node) = restricted_random_walk_on_metapath(graph, end_node, metapath, bad_nodes, walk_forward=False)
+        num_successes += 1
+        if node in node_freqs:
+            node_freqs[node] += 1
+        else:
+            node_freqs[node] = 1
+        bad_nodes = new_bad_nodes
+
     for node in node_freqs:
         node_freqs[node]/=N
     return node_freqs

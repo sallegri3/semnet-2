@@ -51,6 +51,6 @@ if __name__ == '__main__':
     mp3 = ['t1', 'r1', 't2', 'r1', 't1', 'r2', 't1', 'r3', 't1']
     test_randomized_pruned_hetesim(toy_graph_1, mp1, 0.05, 3, 0.95, 0.5774, "toy_graph_1_test", 100, "Computed approximate pruned HeteSim values for toy graph 1")
     test_randomized_pruned_hetesim(toy_graph_2, mp2, 0.05, 3, 0.95, 0.8944, "toy_graph_2_test", 100, "Computed approximate pruned HeteSim values for toy graph 2")
-    test_randomized_pruned_hetesim(toy_graph_3, mp1, 0.05, 3, 0.95, 0.8333, "toy_graph_3_test", 100, "Computed approximate pruned HeteSim values for toy graph 3")
+    test_randomized_pruned_hetesim(toy_graph_3, mp3, 0.05, 3, 0.95, 0.8333, "toy_graph_3_test", 100, "Computed approximate pruned HeteSim values for toy graph 3")
     
     #test_restricted_random_walk_on_metapath(toy_graph_1)
