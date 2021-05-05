@@ -1,5 +1,7 @@
 import sys
-import pandas as pd 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt 
 
 sys.path.insert(0,'/nethome/akirkpatrick3/semnet/semnet')
 from offline import HetGraph
@@ -13,20 +15,22 @@ def test_restricted_random_walk_on_metapath(tg1):
         print(restricted_random_walk_on_metapath(tg1, 's', mp1l , bad_nodes))
     
 
-def test_randomized_pruned_hetesim(tg1, tg2, tg3):
-    epsilon = 0.1
-    r = 0.95
-    # for each graph, run the algorithm 100 times
-    mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']
-    mp2 = ['t1', 'r1', 't2', 'r1', 't3', 'r1', 't4', 'r1', 't5', 'r1', 't6', 'r1', 't7']
-    mp3 = ['t1', 'r1', 't2', 'r1', 't1', 'r2', 't1', 'r3', 't1']
-    #for i in range(100):
-    #    print(randomized_pruned_hetesim(tg1, ['s'], ['t'],  [mp1], 3, epsilon, r)[str(mp1)]['s']['t'])   
-    #for i in range(100):
-    #    print(randomized_pruned_hetesim(tg2, ['s'], ['t'], [mp2], 2, epsilon, r)[str(mp2)]['s']['t'])
-    for i in range(100):
-        print(randomized_pruned_hetesim(tg3, ['s'], ['t'], [mp3], 3, epsilon, r)[str(mp3)]['s']['t'])
+def test_randomized_pruned_hetesim(graph, mp, epsilon, k, r, true_value, filename, N, plot_title):
+    # run the algorithmt N times
+    results = []
+    for i in range(N):
+       results.append(randomized_pruned_hetesim(graph, ['s'], ['t'], [mp], k, epsilon, r)[str(mp)]['s']['t'])
+    results_df = pd.DataFrame(results)
+    results_df.columns = ["approximate pruned hetesim"]
+    results_df.to_csv(filename + ".csv")
+    num_within_epsilon = len([x for x in results if true_value - epsilon <= x and true_value + epsilon >= x])
+    percent_within_epsilon = num_within_epsilon / N * 100
+    print("Of " + str(N) + " iterations, " + str(num_within_epsilon) + " (" + str(percent_within_epsilon) + "% ) had error less than epsilon.")
 
+    print(results_df)
+
+    #hist = results_df.hist(column='approximate pruned hetesim', bins=30)
+    #hist.savefig(filename + ".png")
 
 if __name__ == '__main__':
 
@@ -41,6 +45,12 @@ if __name__ == '__main__':
     # some basic tests
     #print("Number of nodes with a least 1 outgoing edge: " + str(len(toy_graph_1.outgoing_edges)))
     #print("Number of nodes with a least 1 incoming edge: " + str(len(toy_graph_1.incoming_edges)))
-
-    test_randomized_pruned_hetesim(toy_graph_1, toy_graph_2, toy_graph_3)
+    
+    mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']
+    mp2 = ['t1', 'r1', 't2', 'r1', 't3', 'r1', 't4', 'r1', 't5', 'r1', 't6', 'r1', 't7']
+    mp3 = ['t1', 'r1', 't2', 'r1', 't1', 'r2', 't1', 'r3', 't1']
+    test_randomized_pruned_hetesim(toy_graph_1, mp1, 0.05, 3, 0.95, 0.5774, "toy_graph_1_test", 100, "Computed approximate pruned HeteSim values for toy graph 1")
+    test_randomized_pruned_hetesim(toy_graph_2, mp2, 0.05, 3, 0.95, 0.8944, "toy_graph_2_test", 100, "Computed approximate pruned HeteSim values for toy graph 2")
+    test_randomized_pruned_hetesim(toy_graph_3, mp3, 0.05, 3, 0.95, 0.8333, "toy_graph_3_test", 100, "Computed approximate pruned HeteSim values for toy graph 3")
+    
     #test_restricted_random_walk_on_metapath(toy_graph_1)
