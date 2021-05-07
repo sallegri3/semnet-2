@@ -91,8 +91,9 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
     Returns:
     ________
         (bad_nodes, node): (list of lists, str)
-            depth: number of steps taken; if depth == length of metapath, then we have successfully reached the end of the metapath
-            node: the node arrived at when the end of the metapath is reached, or the dead end node
+        bad_nodes: updated list of dead end nodes    
+        node: the node arrived at when the end of the metapath is reached, or the dead end node
+        OR returns (0,0) if no path exists
     """
 
     path_len = int((len(metapath)-1)/2)
@@ -131,7 +132,7 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
             bad_nodes[i-2].add(cur_node)
             cur_node = node_stack.pop()
             i-=1
-    return 0
+    return (0,0)
 
     
 def randomized_hetesim(graph, start_rodes, end_nodes, metapaths, k_max, epsilon, r, g):
@@ -379,6 +380,8 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     while num_successes < N:
         # take a walk, avoiding bad nodes
         (new_bad_nodes, node) = restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True)
+        if new_bad_nodes == 0 and node == 0: # there is no path to the center
+            return {} #return an empty dictionary because there are no reachable center layer nodes
         num_successes += 1
         if node in node_freqs:
             node_freqs[node] += 1
@@ -449,6 +452,8 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     while num_successes < N:
         # take a walk, avoiding bad nodes
         (new_bad_nodes, node) = restricted_random_walk_on_metapath(graph, end_node, metapath, bad_nodes, walk_forward=False)
+        if new_bad_nodes == 0 and node == 0: # there is no path to the center
+            return {} #return an empty dictionary because there are no reachable center layer nodes
         num_successes += 1
         if node in node_freqs:
             node_freqs[node] += 1
