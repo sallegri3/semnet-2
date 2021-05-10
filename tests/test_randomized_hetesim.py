@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0,'/nethome/akirkpatrick3/semnet/semnet')
 from offline import HetGraph
-from randomized_hetesim import randomized_pruned_hetesim, restricted_random_walk_on_metapath
+from randomized_hetesim import randomized_pruned_hetesim, restricted_random_walk_on_metapath, deterministic_hetesim
 
 def test_restricted_random_walk_on_metapath(tg1):
     mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']

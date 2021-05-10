@@ -377,10 +377,10 @@ def _compute_hs_vector_from_left(graph, start_node, metapath):
         hs_vector: dict mapping center-layer nodes to probabilities
            hetesim probability vector for random walks along given metapath from start_node
     """
-    path_len = int((len(metapath)-1)/2
+    path_len = int((len(metapath)-1)/2)
     
     # set up a list of dictionaries, one for each step of the metapath
-    node_probs = [{} for i in range(path_len + 1)]
+    node_probs = [{} for _ in range(path_len + 1)]
     
     # populate the first layer probabilities
     node_probs[0][start_node] = 1
@@ -388,9 +388,13 @@ def _compute_hs_vector_from_left(graph, start_node, metapath):
     # iterate through the steps of the metapath
     for i in range(path_len):
         current_node_type = metapath[2*i]
-        relation = metapath[2*1 + 1]
+        relation = metapath[2*i + 1]
         next_node_type = metapath[2*i + 2]
         
+        #print("current_node_type: " + current_node_type)
+        #print("relation: " + relation)
+        #print("next_node_type: " + next_node_type)
+
         for cur_node in node_probs[i].keys():
             neighbors = graph.outgoing_edges[cur_node][relation][next_node_type]
             weighted_degree = sum([graph.outgoing_edge_weights[cur_node][relation][n] for n in neighbors])
@@ -401,10 +405,12 @@ def _compute_hs_vector_from_left(graph, start_node, metapath):
                     node_probs[i+1][n] += new_prob
                 else:
                     node_probs[i+1][n] = new_prob
+        #print(str(node_probs))
+
     
     return node_probs[path_len]
     
-    def _compute_hs_vector_from_right(graph, end_node, metapath):
+def _compute_hs_vector_from_right(graph, end_node, metapath):
     """
     computes the right-hand-side probability vector used to compute hetesim
     
@@ -424,7 +430,7 @@ def _compute_hs_vector_from_left(graph, start_node, metapath):
            hetesim probability vector for random walks along given metapath from end_node
     """
     
-    path_len = int((len(metapath)-1)/2
+    path_len = int((len(metapath)-1)/2)
     
     # set up a list of dictionaries, one for each step of the metapath
     node_probs = [{} for i in range(path_len + 1)]
@@ -434,9 +440,9 @@ def _compute_hs_vector_from_left(graph, start_node, metapath):
     
     # iterate through the steps of the metapath
     for i in range(path_len):
-        current_node_type = metapath[2*path_len + 1 - 2*i]
-        relation = metapath[2*path_len - 2*i]
-        next_node_type = metapath[2*path_len - 2*i - 1]
+        current_node_type = metapath[2*path_len - 2*i]
+        relation = metapath[2*path_len - 2*i-1]
+        next_node_type = metapath[2*path_len - 2*i -2]
         
         for cur_node in node_probs[i].keys():
             neighbors = graph.incoming_edges[cur_node][relation][next_node_type]
