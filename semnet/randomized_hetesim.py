@@ -287,3 +287,65 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     for node in node_freqs:
         node_freqs[node]/=N
     return node_freqs
+
+def deterministic_hetesim(graph, start_nodes, end_nodes, metapaths):
+    """
+    computes all hetesim scores between elements of start_nodes and end_nodes, under elements of metapaths
+
+
+    Inputs:
+    _______
+        graph: HetGraph
+            underlying graph
+        
+        start_nodes: list of str
+            node 1, type must match start of metapath
+
+        end_nodes: list of str    
+            node 2, type must match end of metapath
+
+        metapaths: list of list of str
+            metapaths on which to compute pruned hetesim
+            format [node_type, edge_type, node_type, ... , edge_type, node_type]
+            All metapaths must have the same length and length must be even
+    """
+    
+def _compute_hs_vector_from_left(graph, start_node, metapath):
+    """
+    computes the left-hand-side probability vector used to compute hetesim
+    
+        Inputs:
+        graph: HetGraph
+            underlying graph
+            
+        start_node: str
+            cui of start node
+        
+        metapath: list of strs
+            metapath for which to compute probability vector
+            
+        
+    Outputs:
+        hs_vector: dict mapping center-layer nodes to probabilities
+           hetesim probability vector for random walks along given metapath from start_node
+    """
+    
+    def _compute_hs_vector_from_right(graph, end_node, metapath):
+    """
+    computes the right-hand-side probability vector used to compute hetesim
+    
+        Inputs:
+        graph: HetGraph
+            underlying graph
+            
+        end_node: str
+            cui of end node
+        
+        metapath: list of strs
+            metapath for which to compute probability vector
+            
+        
+    Outputs:
+        hs_vector: dict mapping center-layer nodes to probabilities
+           hetesim probability vector for random walks along given metapath from end_node
+    """
