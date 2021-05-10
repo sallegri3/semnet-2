@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0,'/nethome/akirkpatrick3/semnet/semnet')
 from offline import HetGraph
-from randomized_hetesim import randomized_pruned_hetesim, restricted_random_walk_on_metapath, deterministic_hetesim
+from randomized_hetesim import randomized_pruned_hetesim, restricted_random_walk_on_metapath, deterministic_hetesim, hetesim_all_metapaths
 
 def test_restricted_random_walk_on_metapath(tg1):
     mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']
@@ -38,6 +38,9 @@ def test_hetesim(graph, mp, true_value):
     print("True hetesim: " + str(true_value))
     assert( true_value - hs < 0.001 and hs - true_value < 0.001)
 
+def test_hetesim_all_metapaths(graph, path_len, metapath, true_hs_value):
+    assert(abs(hetesim_all_metapaths(graph, ['s'],['t'], path_len)[str(metapath)]['s']['t'] -true_hs_value)< 0.001)
+
 if __name__ == '__main__':
 
     # load toy graphs
@@ -62,5 +65,7 @@ if __name__ == '__main__':
     test_hetesim(toy_graph_1, mp1, 0.5774)
     test_hetesim(toy_graph_2, mp2, 0.8437)
     test_hetesim(toy_graph_3, mp3, 0.8333)
+
+    test_hetesim_all_metapaths(toy_graph_1, 4, mp1, 0.5774)
 
     #test_restricted_random_walk_on_metapath(toy_graph_1)
