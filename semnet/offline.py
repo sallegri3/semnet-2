@@ -195,7 +195,7 @@ class HetGraph():
                     # Excude nodes that we have already visited
                     middle_set = out_dict[t].intersection(in_dict[t]) - set(out_path + in_path)
                     for node in middle_set:
-                        yield self._merge_paths(out_path, node, in_path)
+                        yield (self._merge_paths(out_path, node, in_path), len(set(out_dict.keys()).union(set(in_dict.keys())))) # return paths AND value of k found through dfs
 
 
     def _fan_out(self, node, depth=1, curr_path=[]):
