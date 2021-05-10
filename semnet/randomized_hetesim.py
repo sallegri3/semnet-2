@@ -218,6 +218,8 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     return node_freqs
 
 def _cos_similarity(vec_1, vec_2):
+    if not vec_1 or not vec_2:
+        return 0 # if either dictionary is empty, hs will be 0, so return 0
     #print('vec_1' + str(vec_1))
     #print('vec_2' + str(vec_2))
     # compute length of the two vectors
