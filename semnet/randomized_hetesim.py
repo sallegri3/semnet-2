@@ -318,6 +318,7 @@ def randomized_pruned_hetesim_all_metapaths(graph, source_nodes, target_nodes, p
                 accessed as hetesim_scores[metapath][source][target]
     """
     #find all metapaths
+    graph.reset_max_one_sided_k()
     metapaths = []
     for s in source_nodes:
         for t in target_nodes:

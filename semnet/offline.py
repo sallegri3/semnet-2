@@ -199,10 +199,10 @@ class HetGraph():
                 if track_max_k:
                     k1 = len(out_dict.keys())
                     k2 = len(in_dict.keys())
-                    if k1 > max_one_sided_k:
-                        max_one_sided_k = k1
-                    if k2 > max_one_sided_k:
-                        max_one_sided_k = k2
+                    if k1 > self.max_one_sided_k:
+                        self.max_one_sided_k = k1
+                    if k2 > self.max_one_sided_k:
+                        self.max_one_sided_k = k2
                 joint_types = set(out_dict.keys()).intersection(set(in_dict.keys()))
                 for t in joint_types:
                     # Excude nodes that we have already visited
