@@ -48,13 +48,19 @@ class HetGraph():
         self.type_counts = dd(lambda: dd(int))
         self.node2type = {}
         self.relations = set([])
+        
+        self.max_one_sided_k = 0
 
         # Construct graph if edelist if provided
         if edgelist is not None:
             self.construct_graph(edgelist, rel2inv)
 
         
-
+    def get_max_one_sided_k(self):
+        return self.max_one_sided_k
+        
+    def reset_max_one_sided_k(self):
+        self.max_one_sided_k = 0
 
     def construct_graph(self, edgelist, rel2inv=None, add_inverses=True):
         '''
@@ -168,7 +174,7 @@ class HetGraph():
                 self.x2type[key] = key
 
 
-    def compute_fixed_length_paths(self, start_node, end_node, length=2):
+    def compute_fixed_length_paths(self, start_node, end_node, length=2, track_max_k = False):
         '''
         Compute all paths of a fixed length
 
@@ -190,6 +196,13 @@ class HetGraph():
 
         for out_dict, out_path in tqdm(self._fan_out(start_node, depth=fan_out_depth)):
             for in_dict, in_path in tqdm(self._fan_in(end_node, depth=fan_in_depth)):
+                if track_max_k:
+                    k1 = len(out_dict.keys())
+                    k2 = len(in_dict.keys())
+                    if k1 > max_one_sided_k:
+                        max_one_sided_k = k1
+                    if k2 > max_one_sided_k:
+                        max_one_sided_k = k2
                 joint_types = set(out_dict.keys()).intersection(set(in_dict.keys()))
                 for t in joint_types:
                     # Excude nodes that we have already visited

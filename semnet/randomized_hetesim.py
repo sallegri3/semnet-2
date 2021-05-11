@@ -290,10 +290,7 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
         node_freqs[node]/=N
     return node_freqs
 
-
-
-
-def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
+def randomized_pruned_hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, epsilon, r):
     """
         computes hetesim for all metapaths of specified length between the source nodes and the target node
 
@@ -309,20 +306,29 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
 
             path_len: int
                 path length, must be even
+                
+            epsilon: float
+                error tolerance
+                
+            r: float
+                probability of achieving error tolerance
 
         Outputs:
-            hetesim_scores: dict of dicts
+            approximate_pruned_hetesim_scores: dict of dicts
                 accessed as hetesim_scores[metapath][source][target]
     """
     #find all metapaths
     metapaths = []
     for s in source_nodes:
         for t in target_nodes:
-            paths = graph.compute_fixed_length_paths(s, t, length=path_len)
+            paths = graph.compute_fixed_length_paths(s, t, length=path_len, track_max_k=True)
             for mp in [graph._path_to_metapath(p) for p in paths]:
                 if not mp in metapaths:
                     metapaths.append(mp)
     
-    # compute hetesim
-    return deterministic_hetesim(graph, source_nodes, target_nodes, metapaths)   
-
+    #get the max one sided k value found and double it to use as argument below
+    k = 2 * graph.get_max_one_sided_k()
+    
+    
+    # compute randomzied pruned hetesim
+    return randomized_pruned_hetesim(graph, source_nodes, target_nodes, metapaths, k, epsilon, r)
