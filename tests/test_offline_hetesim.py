@@ -1,15 +1,16 @@
-mport sys
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
+import math
 
 sys.path.insert(0,'/nethome/akirkpatrick3/semnet/semnet')
 from offline import HetGraph
-from offline_hetesim import hetesim
+from offline_hetesim import hetesim, hetesim_all_metapaths
 
 
 def test_hetesim(graph, mp, true_value):
-    hs = deterministic_hetesim(graph, ['s'], ['t'], [mp])[str(mp)]['s']['t']
+    hs = hetesim(graph, ['s'], ['t'], [mp])[str(mp)]['s']['t']
     print("Computed hetesim: " + str(hs))
     print("True hetesim: " + str(true_value))
     assert( true_value - hs < 0.001 and hs - true_value < 0.001)

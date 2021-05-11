@@ -2,6 +2,8 @@
 This module implements deterministic hetesim for the datastructure HetGraph given in offline.py
 """
 
+import math
+
 def hetesim(graph, start_nodes, end_nodes, metapaths):
     """
     computes all hetesim scores between elements of start_nodes and end_nodes, under elements of metapaths
