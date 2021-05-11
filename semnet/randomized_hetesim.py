@@ -218,6 +218,8 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     return node_freqs
 
 def _cos_similarity(vec_1, vec_2):
+    if not vec_1 or not vec_2:
+        return 0 # if either dictionary is empty, hs will be 0, so return 0
     #print('vec_1' + str(vec_1))
     #print('vec_2' + str(vec_2))
     # compute length of the two vectors
@@ -287,4 +289,40 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     for node in node_freqs:
         node_freqs[node]/=N
     return node_freqs
+
+
+
+
+def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
+    """
+        computes hetesim for all metapaths of specified length between the source nodes and the target node
+
+        Input:
+            graph: HetGraph
+                graph where hetesim is to be computed
+
+            source_nodes: list of strs
+                list of source node cuis, all source nodes must have same type
+
+            target_node: list of str
+                list of target node cui, all target nodes must have same type
+
+            path_len: int
+                path length, must be even
+
+        Outputs:
+            hetesim_scores: dict of dicts
+                accessed as hetesim_scores[metapath][source][target]
+    """
+    #find all metapaths
+    metapaths = []
+    for s in source_nodes:
+        for t in target_nodes:
+            paths = graph.compute_fixed_length_paths(s, t, length=path_len)
+            for mp in [graph._path_to_metapath(p) for p in paths]:
+                if not mp in metapaths:
+                    metapaths.append(mp)
+    
+    # compute hetesim
+    return deterministic_hetesim(graph, source_nodes, target_nodes, metapaths)   
 
