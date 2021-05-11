@@ -32,11 +32,7 @@ def test_randomized_pruned_hetesim(graph, mp, epsilon, k, r, true_value, filenam
     #hist = results_df.hist(column='approximate pruned hetesim', bins=30)
     #hist.savefig(filename + ".png")
 
-def test_hetesim(graph, mp, true_value):
-    hs = deterministic_hetesim(graph, ['s'], ['t'], [mp])[str(mp)]['s']['t']
-    print("Computed hetesim: " + str(hs))
-    print("True hetesim: " + str(true_value))
-    assert( true_value - hs < 0.001 and hs - true_value < 0.001)
+
 
 if __name__ == '__main__':
 
@@ -59,8 +55,6 @@ if __name__ == '__main__':
     #test_randomized_pruned_hetesim(toy_graph_2, mp2, 0.05, 3, 0.95, 0.8944, "toy_graph_2_test", 100, "Computed approximate pruned HeteSim values for toy graph 2")
     #test_randomized_pruned_hetesim(toy_graph_3, mp3, 0.05, 3, 0.95, 0.8333, "toy_graph_3_test", 100, "Computed approximate pruned HeteSim values for toy graph 3")
     
-    test_hetesim(toy_graph_1, mp1, 0.5774)
-    test_hetesim(toy_graph_2, mp2, 0.8437)
-    test_hetesim(toy_graph_3, mp3, 0.8333)
+
 
     #test_restricted_random_walk_on_metapath(toy_graph_1)
