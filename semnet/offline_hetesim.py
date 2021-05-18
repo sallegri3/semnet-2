@@ -220,3 +220,41 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
     
     # compute hetesim
     return hetesim(graph, source_nodes, target_nodes, metapaths)
+
+
+def mean_hetesim_scores(graph, source_nodes, target_node, path_len):
+    """
+        Inputs:
+            graph: HetGraph
+                graph where HeteSim is to be computed
+    
+            source_nodes: list of str
+                list of source node cuis, all source nodes must have the same type
+
+            target_node: str
+                target node cui
+
+            path_len: int
+                length of metapaths to consider, must be even
+
+        Outputs:
+            mean_hetesim: dict
+                dict mapping source node cui to mean hetesim score
+    """
+
+    hetesim_scores = hetesim_all_metapaths(graph, source_nodes, [target_node], path_len)
+    
+    mean_hetesim = {}
+    
+    num_mps = len(hetesim_scores.keys())
+
+    for node in source_nodes:
+        total_score = 0
+        for mp in hetesim_scores.keys():
+            if node in hetesim_scores[mp] and target_node in hetesim_scores[mp][node]:
+                total_score += hetesim_scores[mp][node][target_node]
+        mean_score = total_score / num_mps
+        mean_hetesim[node] = mean_score
+    
+    return mean_hetesim
+

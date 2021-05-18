@@ -17,7 +17,9 @@ def test_hetesim(graph, mp, true_value):
     
 def test_hetesim_all_metapaths(graph, path_len, metapath, true_hs_value):
     assert(abs(hetesim_all_metapaths(graph, ['s'],['t'], path_len)[str(metapath)]['s']['t'] -true_hs_value)< 0.001)
-    
+
+def test_mean_hetesim_score(graph, path_len, true_mean_hs_value):
+    assert(abs( mean_hetesim_score (graph, ['s'], 't', path_len)['s'] - true_mean_hs_value) < 0.0001) 
     
 if __name__ == '__main__':
 
