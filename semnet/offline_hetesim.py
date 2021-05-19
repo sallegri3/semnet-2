@@ -252,8 +252,8 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len):
         total_score = 0
         for mp in hetesim_scores.keys():
             if node in hetesim_scores[mp] and target_node in hetesim_scores[mp][node]:
-                print("Metapath: " + str(mp))
-                print("Hetesim score: " + str(hetesim_scores[mp][node][target_node]))
+                #print("Metapath: " + str(mp))
+                #print("Hetesim score: " + str(hetesim_scores[mp][node][target_node]))
                 total_score += hetesim_scores[mp][node][target_node]
         mean_score = total_score / num_mps
         mean_hetesim[node] = mean_score
