@@ -3,6 +3,7 @@ This module implements deterministic hetesim for the datastructure HetGraph give
 """
 
 import math
+import random
 
 def hetesim(graph, start_nodes, end_nodes, metapaths):
     """
@@ -210,6 +211,30 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
                 accessed as hetesim_scores[metapath][source][target]
     """
     #find all metapaths
+    metapaths = find_all_metapaths(graph, source_nodes, target_nodes, path_len)
+    
+    # compute hetesim
+    return hetesim(graph, source_nodes, target_nodes, metapaths)
+
+def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
+    """ 
+        returns a list of all metapaths of specified length between specified nodes
+
+        Inputs:
+            graph: HetGraph
+                graph to search in
+    
+            source_nodes: list of str
+                list of source nodes
+
+            target_nodes: list of str
+                list of target nodes
+
+            path_len: int
+                must be even, length of metapaths
+    """
+
+    #find all metapaths
     metapaths = []
     for s in source_nodes:
         for t in target_nodes:
@@ -217,10 +242,9 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
             for mp in [graph._path_to_metapath(p) for p in paths]:
                 if not mp in metapaths:
                     metapaths.append(mp)
-    
-    # compute hetesim
-    return hetesim(graph, source_nodes, target_nodes, metapaths)
 
+    return metapaths
+    
 
 def mean_hetesim_scores(graph, source_nodes, target_node, path_len):
     """
@@ -258,5 +282,60 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len):
         mean_score = total_score / num_mps
         mean_hetesim[node] = mean_score
     
+    return mean_hetesim
+
+def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, epsilon, r):
+    """
+
+    This function computes an approximate mean hetesim score for each source node with respect to a fixed target node.  The approximation is taken by selecting only m metapaths for computation of hetesim, and taking the average of those m scores.  m is selected based on error tolerance epsilon and r.
+
+        Inputs:
+            graph: HetGraph
+                graph where HeteSim is to be computed
+    
+            source_nodes: list of str
+                list of source node cuis, all source nodes must have the same type
+
+            target_node: str
+                target node cui
+
+            path_len: int
+                length of metapaths to consider, must be even
+
+            epsilon: float
+                (additive) error tolerance
+    
+            r: float
+                probability of result being within error tolerance
+
+        Outputs:
+            mean_hetesim: dict
+                dict mapping source node cui to approximate mean hetesim score
+    """
+
+    # first compute m
+    num_source_nodes = len(source_nodes)
+    m = 1 / (2 * epsilon ** 2) * math.log(2 * num_source_nodes / r)
+    
+    # next, select m metapaths for computation of hetesim
+    mps = find_all_metapaths(graph, source_nodes, [target_node], path_len)
+    if(m < len(mps)):
+        selected_mps = random.sample(mps, m)
+    else:
+        selected_mps = mps
+    
+    # then, compute hetesim on the selected metapaths
+    hs_scores = hetesim(graph, source_nodes, [target_node], selected_mps)
+
+    # finally, take averages
+    num_metapaths = len(selected_mps)
+    mean_hetesim = {}
+    for s in source_nodes:
+        total_score = 0
+        for mp in selected_mps:
+            if str(mp) in hs_scores and s in hs_scores[str(mp)]:
+                total_score += hs_scores[str(mp)][s][target_node]
+        mean_hetesim[s] = total_score / num_metapaths
+
     return mean_hetesim
 

@@ -6,7 +6,7 @@ import math
 
 sys.path.insert(0,'/nethome/akirkpatrick3/semnet/semnet')
 from offline import HetGraph
-from offline_hetesim import hetesim, hetesim_all_metapaths, mean_hetesim_scores
+from offline_hetesim import hetesim, hetesim_all_metapaths, mean_hetesim_scores, approximate_mean_hetesim_scores
 
 
 def test_hetesim(graph, mp, true_value):
@@ -21,7 +21,12 @@ def test_hetesim_all_metapaths(graph, path_len, metapath, true_hs_value):
 def test_mean_hetesim_scores(graph, path_len, true_mean_hs_value):
     #print(mean_hetesim_scores(graph, ['s'], 't', path_len))
     assert(abs( mean_hetesim_scores (graph, ['s'], 't', path_len)['s'] - true_mean_hs_value) < 0.01) 
-    
+
+def test_approximate_mean_hetesim_scores(graph, path_len, true_mean_hs_value):
+    approx_mean_hs = approximate_mean_hetesim_scores(graph, ['s'],'t',path_len, 0.05, 0.95)['s'] 
+    print("approx mean hs: " + str(approx_mean_hs))
+    print("True mean hs: " + str(true_mean_hs_value))
+
 if __name__ == '__main__':
 
     # load toy graphs
@@ -48,3 +53,4 @@ if __name__ == '__main__':
     test_hetesim_all_metapaths(toy_graph_1, 4, mp1, 0.5774)
 
     test_mean_hetesim_scores(toy_graph_4, 4, 0.6007)
+    test_approximate_mean_hetesim_scores(toy_graph_4, 4, 0.6007)
