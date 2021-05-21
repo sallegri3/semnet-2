@@ -432,7 +432,7 @@ def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, 
     k_max = 2*k_one_sided
     num_source_nodes = len(source_nodes)
     r1 = r * (4 * math.log(2 * num_source_nodes / r) * k_max) / (4 * math.log(2*num_source_nodes / r) * k_max + epsilon**2)
-    m = 2 / (epsilon**2) * math.log(2*num_source_nodes / (r - r1))
+    m = math.ceil(2 / (epsilon**2) * math.log(2*num_source_nodes / (r - r1)))
     
     # and select m metapaths
     if(m < len(mps)):
@@ -442,7 +442,7 @@ def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, 
         
     #compute arguments for randomized_pruned_hetesim
     c = (5 + 2*math.sqrt(5))/2
-    N = (4 * c * epsilon / 2 * k_max) / (epsilon**2) * math.log(4 * m * num_source_nodes * k_max / r1)
+    N = math.ceil((4 * c * epsilon / 2 * k_max) / (epsilon**2) * math.log(4 * m * num_source_nodes * k_max / r1))
     
     # the actual hetesim computations
     pruned_hs_scores = randomized_pruned_hetesim_given_N(graph, source_nodes, [target_node], selected_mps, k_max, N)
