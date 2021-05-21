@@ -315,7 +315,7 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
 
     # first compute m
     num_source_nodes = len(source_nodes)
-    m = 1 / (2 * epsilon ** 2) * math.log(2 * num_source_nodes / r)
+    m = math.ceil(1 / (2 * epsilon ** 2) * math.log(2 * num_source_nodes / r))
     
     # next, select m metapaths for computation of hetesim
     mps = find_all_metapaths(graph, source_nodes, [target_node], path_len)
