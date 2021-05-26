@@ -117,13 +117,13 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
      
     c = (5 + 2*math.sqrt(5))/2
     C = 2*(c + math.sqrt(c**2+4*epsilon))**2 + epsilon*(c+math.sqrt(c**2+4*epsilon))
-    print("C: " + str(C))
-    print("c: " + str(c))
-    print("epsilon: " + str(epsilon))
-    print("k_max: " + str(k_max))
-    print("r: " + str(r))
+    #print("C: " + str(C))
+    #print("c: " + str(c))
+    #print("epsilon: " + str(epsilon))
+    #print("k_max: " + str(k_max))
+    #print("r: " + str(r))
     N = math.ceil(math.ceil(C/(epsilon**2))*k_max*math.log(4*k_max/(1-r)))
-    
+    print("Computed value of N for randomized pruned hs:  " + str(N))
     return randomized_pruned_hetesim_given_N(graph, start_nodes, end_nodes, metapaths, k_max, N)
     
 

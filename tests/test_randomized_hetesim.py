@@ -74,12 +74,12 @@ if __name__ == '__main__':
     mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']
     mp2 = ['t1', 'r1', 't2', 'r1', 't3', 'r1', 't4', 'r1', 't5', 'r1', 't6', 'r1', 't7']
     mp3 = ['t1', 'r1', 't2', 'r1', 't1', 'r2', 't1', 'r3', 't1']
-    #test_randomized_pruned_hetesim(toy_graph_1, mp1, 0.05, 3, 0.95, 0.5774, "toy_graph_1_test", 100, "Computed approximate pruned HeteSim values for toy graph 1")
+    test_randomized_pruned_hetesim(toy_graph_1, mp1, 0.05, 3, 0.95, 0.5774, "toy_graph_1_test", 100, "Computed approximate pruned HeteSim values for toy graph 1")
     #test_randomized_pruned_hetesim(toy_graph_2, mp2, 0.05, 3, 0.95, 0.8944, "toy_graph_2_test", 100, "Computed approximate pruned HeteSim values for toy graph 2")
     #test_randomized_pruned_hetesim(toy_graph_3, mp3, 0.05, 3, 0.95, 0.8333, "toy_graph_3_test", 100, "Computed approximate pruned HeteSim values for toy graph 3")
 
     #test_randomized_pruned_hetesim_all_metapaths(toy_graph_1, mp1, 4, 0.05, 0.95, 0.5774, 5)
     #test_randomized_pruned_hetesim_all_metapaths(toy_graph_2, mp2, 6, 0.05, 0.95, 0.8944, 5)
-    test_approximate_mean_pruned_hetesim(toy_graph_4, 4, 0.05, 0.95, 0.6007, 5)
+    #test_approximate_mean_pruned_hetesim(toy_graph_4, 4, 0.05, 0.95, 0.6007, 5)
 
     #test_restricted_random_walk_on_metapath(toy_graph_1)
