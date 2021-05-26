@@ -339,6 +339,39 @@ class HetGraph():
 
         return curr_path + curr_node + next_path
 
+    def compute_metapath_reachable_nodes(self, source_node, metapath):
+        """
+            Computes the set of nodes reachable along metapath starting from source_node
+
+            Inputs:
+                source_node: str
+                    node to start from, must have type the same as the first type in metapath
+
+                metapath: list of str
+                    the metapath to navigate along
+            
+            Outputs:
+                reachable_nodes: set of str
+                    the set of nodes reachable from source_node by following the given metapath
+        """
+    
+        mp_len = int((len(metapath) - 1) / 2) # num relations in mp
+    
+        reachable_nodes_by_depth = [set() for _ in range(mp_len + 1)]
+        reachable_nodes_by_depth[0].add(source_node) # at depth 0, the only reachable node is the source node
+
+        for d in range(mp_len):
+            cur_node_type = metapath[2*d]
+            next_node_type = metapath[2*(d+1)]
+            relation = metapath[2*d + 1]
+            
+            for node in reachable_nodes_by_depth[d]:
+                reachable_nodes_by_depth[d+1] = reachable_nodes_by_depth[d+1].union(self.outgoing_edges[node][relation][next_node_type])
+                
+        return reachable_nodes_by_depth[mp_len]  
+
+
+        
 
     def _path_to_metapath(self, path):
         '''

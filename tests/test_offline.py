@@ -155,6 +155,20 @@ def test_fixed_length_paths(hg):
     assert all([x.startswith('a') for x in path_strings])
     assert all([x.endswith('c') for x in path_strings])
 
+def test_compute_metapath_reachable_nodes(hg):
+    mp = ['t1', 'r1', 't1']
+    reachable_nodes = hg.compute_metapath_reachable_nodes('a', mp)
+    assert 'a' in reachable_nodes
+    assert 'b' in reachable_nodes
+    assert not 'd' in reachable_nodes
+    assert not 'c' in reachable_nodes
+    
+    mp2 = ['t1', 'r1', 't2', 'r1', 't1'] 
+    reachable_nodes_2 = hg.compute_metapath_reachable_nodes('a', mp2)
+    assert 'a' in reachable_nodes_2
+    assert 'b' in reachable_nodes_2
+    assert 'd' in reachable_nodes_2
+    assert not 'e' in reachable_nodes_2 
 
 
 if __name__ == '__main__':
@@ -171,3 +185,4 @@ if __name__ == '__main__':
     test_fan_in_2(hg)
     test_fixed_length_paths(hg)
     # test_merge_paths(hg)
+    test_compute_metapath_reachable_nodes(hg)
