@@ -210,6 +210,13 @@ def test_compute_metapath_reachable_nodes(hg):
     assert not 'e' in reachable_nodes_2 
 
 
+def test_compute_fixed_length_metapaths(hg):
+    mps = [hg._path_to_string(mp) for mp in hg.compute_fixed_length_metapaths('a', 'b', length=2)]
+    print(mps)
+    assert 't1->r1->t2->r1->t1' in mps
+    assert 't1->r1->t1->r1->t2' in mps
+    
+    
 if __name__ == '__main__':
     print(toy_graph)
     edgelist = toy_graph.to_dict(orient='records')

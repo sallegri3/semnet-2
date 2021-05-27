@@ -248,7 +248,24 @@ class HetGraph():
                 middle_set = out_set.intersection(in_set)
                 for node in middle_set:
                     yield self._merge_paths(out_path, node, in_path)
-                 
+                    
+    def compute_fixed_length_metapaths(self, source_node, target_node, length=2):
+        '''
+        Computes all metapaths of fixed length between source and target nodes 
+        by first computing all possible metapaths in the schema and then 
+        checking to see if each metapath actually exists
+        
+        returns an iterator of metapaths
+        '''
+        source_type = node2type[source_node]
+        target_type = node2type[target_node]
+
+        for candidate_mp in self.compute_fixed_length_schema_walks(source_type, target_type, length=length):
+            if target_node in self.compute_metapath_reachable_nodes(source_node, candidate_mp): # if metapath exists
+                yield candidate_mp
+                
+            
+        
 
 
     def _fan_out(self, node, depth=1, curr_path=[]):
