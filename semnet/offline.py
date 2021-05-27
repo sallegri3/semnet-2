@@ -279,7 +279,51 @@ class HetGraph():
                         if next_node not in current_path:
                             yield from self._fan_out(next_node, curr_path=current_path, depth=depth-1)
 
+    def _schema_fan_out(self, node, depth=1, curr_path=[]):
+        '''
+        Recursively compute all reachable target nodes by path of length 
+            $DEPTH from $NODE.
 
+        Only follows outgoing edges
+
+        Inputs:
+        -------
+            node: str
+                CUI string of node
+
+            curr_path: list
+                Path traversed so far to reach node
+
+            depth: int >= 0
+                Number of additional path segments to compute before returning
+
+        Returns:
+        --------
+            Iterator of:
+                next_nodes: set of terminal nodes at end of path
+                current_path: Path used to reach each node in next_nodes
+        '''
+        # If depth is 0, just return current node (is a type, because in schema)
+        if depth == 0:
+            # yield ({node}, [])
+            yield ({node}, [])
+
+        # If depth is 1, return each set of neighbors and the path used to get there
+        elif depth == 1:
+            for (next_path, next_nodes) in self.schema_outgoing_edges[node].items():
+                current_path = self._merge_paths(curr_path, node, next_path)
+                # for node_type, node_set in next_dict.items():
+                    # yield (node_set - set(current_path), current_path)
+                yield (next_nodes, current_path)
+
+        # Otherwise, recursively travel down edges until we reach depth 1
+        else:
+            for (next_path, next_nodes) in self.schema_outgoing_edges[node].items():
+                current_path = self._merge_paths(curr_path, node, next_path)
+                for next_node in next_nodes:
+                    yield from self._schema_fan_out(next_node, curr_path=current_path, depth=depth-1)
+                            
+                            
     def _fan_in(self, node, curr_path=[], depth=1):
         '''
         Recursively compute all nodes $DEPTH steps away that feed into $NODE
@@ -308,6 +352,32 @@ class HetGraph():
                         if next_node not in current_path:
                             yield from self._fan_in(next_node, curr_path=current_path, depth=depth-1)
 
+
+    def _schema_fan_in(self, node, curr_path=[], depth=1):
+        '''
+        Recursively compute all nodes $DEPTH steps away that feed into $NODE
+
+        Similar to `_schema_fan_out()` but looks at incoming edges instead of outgoing edges.
+        '''
+        # If depth is 0, just return current node
+        if depth == 0:
+            yield ({node}, [])
+        
+
+        # If depth is 1, return each set of neighbors and the path used to get there
+        elif depth == 1:
+            for (next_path, next_nodes) in self.schema_incoming_edges[node].items():
+                current_path = self._merge_paths(next_path, node, curr_path)
+                # for node_type, node_set in next_dict.items():
+                    # yield (node_set - set(current_path), current_path)
+                yield (next_nodes, current_path)
+
+        # Otherwise, recursively travel down edges until we reach depth 1
+        else:
+            for (next_path, next_nodes) in self.schema_incoming_edges[node].items():
+                current_path = self._merge_paths(next_path, node, curr_path)
+                for next_node in next_nodes:
+                     yield from self._schema_fan_in(next_node, curr_path=current_path, depth=depth-1)
 
     def _get_edges_to_nbhrs(self, node):
         '''

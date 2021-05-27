@@ -86,6 +86,10 @@ def test_fan_out_0(hg):
     assert node == {'t1':{'a'}}
     assert path == []
 
+def test_schema_fan_out_0(hg):
+    node, path = next(hg._schema_fan_out('t1', depth=0))
+    assert node == {'t1'}
+    assert path == []
 
 def test_fan_out_1(hg):
     '''
@@ -102,10 +106,24 @@ def test_fan_out_1(hg):
     # assert ('a->r2_inv', {'t1':{'b'}}) in nbhrs
     assert nbhr_nodes == {'a','b','c','e','f'}
 
+def test_schema_fan_out_1(hg):
+    '''
+    Test HetGraph._fan_out function with depth 1
+    '''
+    nbhrs = [(hg._path_to_string(x[1]), x[0]) for x in hg._schema_fan_out('t1', depth=1)]
+    #print(nbhrs)
+    nbhr_nodes = set([])
+    for path, nodes in nbhrs:
+        nbhr_nodes |= nodes
+    #print(nbhr_nodes)
+    # assert ('a->r1', ('t2', {'c', 'e'}) in nbhrs
+    # assert ('a->r2_inv', {'t1':{'b'}}) in nbhrs
+    assert nbhr_nodes == {'t1', 't2'}
+
 
 def test_fan_out_2(hg):
     '''
-    Test HetGraph._fan_out function with depth 1
+    Test HetGraph._fan_out function with depth 2
     '''
     nbhrs = [(hg._path_to_string(x[1]), x[0]) for x in hg._fan_out('a', depth=2)]
     nbhr_nodes = set([])
@@ -115,6 +133,19 @@ def test_fan_out_2(hg):
     # assert ('a->r1->b->r2_inv', {'t1':{'d'}}) in nbhrs
     # assert ('a->r1->c->r1', {'t1':{'d'}}) in nbhrs
     assert nbhr_nodes == {'a','b','c','d','e','f'}
+    
+def test_schema_fan_out_2(hg):
+    '''
+    Test HetGraph._schema_fan_out function with depth 2
+    '''
+    nbhrs = [(hg._path_to_string(x[1]), x[0]) for x in hg._schema_fan_out('t1', depth=2)]
+    # print(nbhrs)
+    nbhr_nodes = set([])
+    for path, node_set in nbhrs:
+        nbhr_nodes |= node_set
+    # assert ('a->r1->b->r2_inv', {'t1':{'d'}}) in nbhrs
+    # assert ('a->r1->c->r1', {'t1':{'d'}}) in nbhrs
+    assert nbhr_nodes == {'t1','t2'}
 
 
 def test_fan_in_0(hg):
@@ -188,3 +219,6 @@ if __name__ == '__main__':
     test_fixed_length_paths(hg)
     # test_merge_paths(hg)
     test_compute_metapath_reachable_nodes(hg)
+    test_schema_fan_out_0(hg)
+    test_schema_fan_out_1(hg)    
+    test_schema_fan_out_2(hg)
