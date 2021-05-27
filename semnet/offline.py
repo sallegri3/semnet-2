@@ -44,6 +44,17 @@ class HetGraph():
                                             lambda: dd( # source node
                                                 int #edge weight
                                                     )))
+        self.schema_outgoing_edges = dd( #source node (is a type)
+                                        lambda: dd( #relation
+                                            set #target nodes (are types)
+                                                ))
+
+        self.schema_incoming_edges = dd( #target node
+                                        lambda: dd( #relation
+                                            set #target nodes
+                                                ))
+
+
         self.type2nodes = dd(set)
         self.type_counts = dd(lambda: dd(int))
         self.node2type = {}
@@ -91,6 +102,11 @@ class HetGraph():
             relation = e['relation']
             weight = e['weight']
             
+            # add to schema graph, as needed
+            self.schema_outgoing_edges[start_type][relation].add(end_type) # note: sets only add an element if not already present
+            self.schema_incoming_edges[end_type][relation].add(start_type)
+            
+            # add to main graph
             self.outgoing_edges[start_node][relation][end_type].add(end_node)
             self.outgoing_edge_weights[start_node][relation][end_node] =int(weight)
             self.incoming_edges[end_node][relation][start_type].add(start_node)
@@ -104,6 +120,8 @@ class HetGraph():
                 self.incoming_edge_weights[start_node][inverse_relation][end_node] = int(weight)
                 self.outgoing_edges[end_node][inverse_relation][start_type].add(start_node)
                 self.outgoing_edge_weights[end_node][inverse_relation][start_node] = int(weight)
+                self.schema_incoming_edges[start_type][inverse_relation].add(end_type)
+                self.schema_outgoing_edges[end_type][inverse_relation].add(start_type)
                 self.relations.add(inverse_relation)
 
             # Get counts of how often node appears as each type (since it may have multiple categories)
@@ -152,8 +170,10 @@ class HetGraph():
                         # print("rel2inv[rel]:", rel2inv[rel])
                         # print()
                         self.incoming_edges[node][rel2inv[rel]][node_type] |= node_set
+                        self.schema_incoming_edges[node2type[node]][rel2inv[rel]].add(node_type)
                 else:
                     self.incoming_edges[node][rel2inv[rel]] = neighbors
+                    self.schema_incoming_edges[node2type[node]][rel2inv[rel]] = {node_type}
 
         # Inverse edges from incoming
         logger.info("Adding inverse outgoing edges")
@@ -164,8 +184,10 @@ class HetGraph():
                 if rel2inv[rel] in self.outgoing_edges[node]:
                     for node_type, node_set in neighbors.items():
                         self.outgoing_edges[node][rel2inv[rel]][node_type] |= node_set
+                        self.schema_outgoing_edges[node2type[node]][rel2inv[rel]].add(node_type)
                 else:
                     self.outgoing_edges[node][rel2inv[rel]] = neighbors
+                    self.schema_outgoing_edges[node2type[node]][rel2inv[rel]] = {node_type}
 
         # Add inverse relations to relation list
         for key, val in rel2inv.items():
