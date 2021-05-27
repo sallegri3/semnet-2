@@ -187,6 +187,12 @@ def test_fixed_length_paths(hg):
     assert 'a->r2->f->r1->c' in path_strings
     assert all([x.startswith('a') for x in path_strings])
     assert all([x.endswith('c') for x in path_strings])
+    
+def test_fixed_length_schema_walks(hg):
+    paths = hg.compute_fixed_length_schema_walks('t1','t2',length=2)
+    path_strings = [hg._path_to_string(p) for p in paths]
+    print(path_strings)
+    assert 't1->r1->t1->r2->t2' in path_strings
 
 def test_compute_metapath_reachable_nodes(hg):
     mp = ['t1', 'r1', 't1']
@@ -222,3 +228,4 @@ if __name__ == '__main__':
     test_schema_fan_out_0(hg)
     test_schema_fan_out_1(hg)    
     test_schema_fan_out_2(hg)
+    test_fixed_length_schema_walks(hg)

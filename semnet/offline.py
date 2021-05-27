@@ -231,6 +231,24 @@ class HetGraph():
                     middle_set = out_dict[t].intersection(in_dict[t]) - set(out_path + in_path)
                     for node in middle_set:
                         yield self._merge_paths(out_path, node, in_path)
+                        
+    def compute_fixed_length_schema_walks(self, start_node, end_node, length=2):
+        '''
+        Compute all walks in schema graph of a fixed length
+
+        '''
+        # Compute fan out and fan in
+        fan_out_depth = length // 2
+        fan_in_depth = length // 2
+        if length % 2 == 1:
+            fan_out_depth += 1
+
+        for out_set, out_path in tqdm(self._schema_fan_out(start_node, depth=fan_out_depth)):
+            for in_set, in_path in tqdm(self._schema_fan_in(end_node, depth=fan_in_depth)):
+                middle_set = out_set.intersection(in_set)
+                for node in middle_set:
+                    yield self._merge_paths(out_path, node, in_path)
+                 
 
 
     def _fan_out(self, node, depth=1, curr_path=[]):
