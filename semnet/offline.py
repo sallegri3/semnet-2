@@ -44,6 +44,17 @@ class HetGraph():
                                             lambda: dd( # source node
                                                 int #edge weight
                                                     )))
+        self.schema_outgoing_edges = dd( #source node (is a type)
+                                        lambda: dd( #relation
+                                            set #target nodes (are types)
+                                                ))
+
+        self.schema_incoming_edges = dd( #target node
+                                        lambda: dd( #relation
+                                            set #target nodes
+                                                ))
+
+
         self.type2nodes = dd(set)
         self.type_counts = dd(lambda: dd(int))
         self.node2type = {}
@@ -91,6 +102,11 @@ class HetGraph():
             relation = e['relation']
             weight = e['weight']
             
+            # add to schema graph, as needed
+            self.schema_outgoing_edges[start_type][relation].add(end_type) # note: sets only add an element if not already present
+            self.schema_incoming_edges[end_type][relation].add(start_type)
+            
+            # add to main graph
             self.outgoing_edges[start_node][relation][end_type].add(end_node)
             self.outgoing_edge_weights[start_node][relation][end_node] =int(weight)
             self.incoming_edges[end_node][relation][start_type].add(start_node)
@@ -104,6 +120,8 @@ class HetGraph():
                 self.incoming_edge_weights[start_node][inverse_relation][end_node] = int(weight)
                 self.outgoing_edges[end_node][inverse_relation][start_type].add(start_node)
                 self.outgoing_edge_weights[end_node][inverse_relation][start_node] = int(weight)
+                self.schema_incoming_edges[start_type][inverse_relation].add(end_type)
+                self.schema_outgoing_edges[end_type][inverse_relation].add(start_type)
                 self.relations.add(inverse_relation)
 
             # Get counts of how often node appears as each type (since it may have multiple categories)
@@ -152,8 +170,10 @@ class HetGraph():
                         # print("rel2inv[rel]:", rel2inv[rel])
                         # print()
                         self.incoming_edges[node][rel2inv[rel]][node_type] |= node_set
+                        self.schema_incoming_edges[node2type[node]][rel2inv[rel]].add(node_type)
                 else:
                     self.incoming_edges[node][rel2inv[rel]] = neighbors
+                    self.schema_incoming_edges[node2type[node]][rel2inv[rel]] = {node_type}
 
         # Inverse edges from incoming
         logger.info("Adding inverse outgoing edges")
@@ -164,8 +184,10 @@ class HetGraph():
                 if rel2inv[rel] in self.outgoing_edges[node]:
                     for node_type, node_set in neighbors.items():
                         self.outgoing_edges[node][rel2inv[rel]][node_type] |= node_set
+                        self.schema_outgoing_edges[node2type[node]][rel2inv[rel]].add(node_type)
                 else:
                     self.outgoing_edges[node][rel2inv[rel]] = neighbors
+                    self.schema_outgoing_edges[node2type[node]][rel2inv[rel]] = {node_type}
 
         # Add inverse relations to relation list
         for key, val in rel2inv.items():
@@ -209,6 +231,41 @@ class HetGraph():
                     middle_set = out_dict[t].intersection(in_dict[t]) - set(out_path + in_path)
                     for node in middle_set:
                         yield self._merge_paths(out_path, node, in_path)
+                        
+    def compute_fixed_length_schema_walks(self, start_node, end_node, length=2):
+        '''
+        Compute all walks in schema graph of a fixed length
+
+        '''
+        # Compute fan out and fan in
+        fan_out_depth = length // 2
+        fan_in_depth = length // 2
+        if length % 2 == 1:
+            fan_out_depth += 1
+
+        for out_set, out_path in tqdm(self._schema_fan_out(start_node, depth=fan_out_depth)):
+            for in_set, in_path in tqdm(self._schema_fan_in(end_node, depth=fan_in_depth)):
+                middle_set = out_set.intersection(in_set)
+                for node in middle_set:
+                    yield self._merge_paths(out_path, node, in_path)
+                    
+    def compute_fixed_length_metapaths(self, source_node, target_node, length=2):
+        '''
+        Computes all metapaths of fixed length between source and target nodes 
+        by first computing all possible metapaths in the schema and then 
+        checking to see if each metapath actually exists
+        
+        returns an iterator of metapaths
+        '''
+        source_type = self.node2type[source_node]
+        target_type = self.node2type[target_node]
+
+        for candidate_mp in self.compute_fixed_length_schema_walks(source_type, target_type, length=length):
+            if target_node in self.compute_metapath_reachable_nodes(source_node, candidate_mp): # if metapath exists
+                yield candidate_mp
+                
+            
+        
 
 
     def _fan_out(self, node, depth=1, curr_path=[]):
@@ -257,7 +314,51 @@ class HetGraph():
                         if next_node not in current_path:
                             yield from self._fan_out(next_node, curr_path=current_path, depth=depth-1)
 
+    def _schema_fan_out(self, node, depth=1, curr_path=[]):
+        '''
+        Recursively compute all reachable target nodes by path of length 
+            $DEPTH from $NODE.
 
+        Only follows outgoing edges
+
+        Inputs:
+        -------
+            node: str
+                CUI string of node
+
+            curr_path: list
+                Path traversed so far to reach node
+
+            depth: int >= 0
+                Number of additional path segments to compute before returning
+
+        Returns:
+        --------
+            Iterator of:
+                next_nodes: set of terminal nodes at end of path
+                current_path: Path used to reach each node in next_nodes
+        '''
+        # If depth is 0, just return current node (is a type, because in schema)
+        if depth == 0:
+            # yield ({node}, [])
+            yield ({node}, [])
+
+        # If depth is 1, return each set of neighbors and the path used to get there
+        elif depth == 1:
+            for (next_path, next_nodes) in self.schema_outgoing_edges[node].items():
+                current_path = self._merge_paths(curr_path, node, next_path)
+                # for node_type, node_set in next_dict.items():
+                    # yield (node_set - set(current_path), current_path)
+                yield (next_nodes, current_path)
+
+        # Otherwise, recursively travel down edges until we reach depth 1
+        else:
+            for (next_path, next_nodes) in self.schema_outgoing_edges[node].items():
+                current_path = self._merge_paths(curr_path, node, next_path)
+                for next_node in next_nodes:
+                    yield from self._schema_fan_out(next_node, curr_path=current_path, depth=depth-1)
+                            
+                            
     def _fan_in(self, node, curr_path=[], depth=1):
         '''
         Recursively compute all nodes $DEPTH steps away that feed into $NODE
@@ -286,6 +387,32 @@ class HetGraph():
                         if next_node not in current_path:
                             yield from self._fan_in(next_node, curr_path=current_path, depth=depth-1)
 
+
+    def _schema_fan_in(self, node, curr_path=[], depth=1):
+        '''
+        Recursively compute all nodes $DEPTH steps away that feed into $NODE
+
+        Similar to `_schema_fan_out()` but looks at incoming edges instead of outgoing edges.
+        '''
+        # If depth is 0, just return current node
+        if depth == 0:
+            yield ({node}, [])
+        
+
+        # If depth is 1, return each set of neighbors and the path used to get there
+        elif depth == 1:
+            for (next_path, next_nodes) in self.schema_incoming_edges[node].items():
+                current_path = self._merge_paths(next_path, node, curr_path)
+                # for node_type, node_set in next_dict.items():
+                    # yield (node_set - set(current_path), current_path)
+                yield (next_nodes, current_path)
+
+        # Otherwise, recursively travel down edges until we reach depth 1
+        else:
+            for (next_path, next_nodes) in self.schema_incoming_edges[node].items():
+                current_path = self._merge_paths(next_path, node, curr_path)
+                for next_node in next_nodes:
+                     yield from self._schema_fan_in(next_node, curr_path=current_path, depth=depth-1)
 
     def _get_edges_to_nbhrs(self, node):
         '''

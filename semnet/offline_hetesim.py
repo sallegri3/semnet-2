@@ -189,7 +189,7 @@ def _cos_similarity(vec_1, vec_2):
     
     return dot_prod / (vec_1_len * vec_2_len)
     
-def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
+def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_metapaths_from_schema_walks=True):
     """
         computes hetesim for all metapaths of specified length between the source nodes and the target node
 
@@ -205,13 +205,26 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len):
 
             path_len: int
                 path length, must be even
+                
+            find_metapaths_from_schema_walks: bool
+                if true, use metapath enumeration based on walks in schema
+                if false, use metapath enumeration based on paths in the graph
 
         Outputs:
             hetesim_scores: dict of dicts
                 accessed as hetesim_scores[metapath][source][target]
     """
     #find all metapaths
-    metapaths = find_all_metapaths(graph, source_nodes, target_nodes, path_len)
+    if find_metapaths_from_schema_walks:
+        metapaths=[]
+        for s in source_nodes:
+            for t in target_nodes:
+                mps = [p for p in graph.compute_fixed_length_metapaths(s,t, length=path_len)]
+                for mp in mps:
+                    if not mp in metapaths:
+                        metapaths.append(mp)
+    else:
+        metapaths = find_all_metapaths(graph, source_nodes, target_nodes, path_len)
     
     # compute hetesim
     return hetesim(graph, source_nodes, target_nodes, metapaths)
@@ -246,7 +259,7 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
     return metapaths
     
 
-def mean_hetesim_scores(graph, source_nodes, target_node, path_len):
+def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapaths_from_schema_walks=True):
     """
         Inputs:
             graph: HetGraph
@@ -260,13 +273,17 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len):
 
             path_len: int
                 length of metapaths to consider, must be even
+                
+             find_metapaths_from_schema_walks: bool
+                if true, use metapath enumeration based on walks in schema
+                if false, use metapath enumeration based on paths in the graph
 
         Outputs:
             mean_hetesim: dict
                 dict mapping source node cui to mean hetesim score
     """
 
-    hetesim_scores = hetesim_all_metapaths(graph, source_nodes, [target_node], path_len)
+    hetesim_scores = hetesim_all_metapaths(graph, source_nodes, [target_node], path_len, find_metapaths_from_schema_walks=find_metapaths_from_schema_walks)
     
     mean_hetesim = {}
     
@@ -284,7 +301,7 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len):
     
     return mean_hetesim
 
-def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, epsilon, r):
+def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, epsilon, r, find_metapaths_from_schema_walks=True):
     """
 
     This function computes an approximate mean hetesim score for each source node with respect to a fixed target node.  The approximation is taken by selecting only m metapaths for computation of hetesim, and taking the average of those m scores.  m is selected based on error tolerance epsilon and r.
@@ -307,6 +324,10 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
     
             r: float
                 probability of result being within error tolerance
+                
+            find_metapaths_from_schema_walks: bool
+                if true, use metapath enumeration based on walks in schema
+                if false, use metapath enumeration based on paths in the graph
 
         Outputs:
             mean_hetesim: dict
@@ -317,13 +338,45 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
     num_source_nodes = len(source_nodes)
     m = math.ceil(1 / (2 * epsilon ** 2) * math.log(2 * num_source_nodes / r))
     
-    # next, select m metapaths for computation of hetesim
-    mps = find_all_metapaths(graph, source_nodes, [target_node], path_len)
-    if(m < len(mps)):
-        selected_mps = random.sample(mps, m)
+    if not find_metapaths_from_schema_walks:
+        #  select m metapaths for computation of hetesim
+        mps = find_all_metapaths(graph, source_nodes, [target_node], path_len)
+        if m < len(mps):
+            selected_mps = random.sample(mps, m)
+        else:
+            selected_mps = mps
     else:
-        selected_mps = mps
-    
+        schema_walks = [] # we use a list (not a set) here for faster random selections
+        for s in source_nodes:
+            for sw in graph.compute_fixed_length_schema_walks(graph.node2type[s], graph.node2type[target_node], length=path_len):
+                # print("sw: " + str(sw))
+                if not sw in schema_walks:
+                    schema_walks.append(sw)
+        # schema_walks is now all schema walks which MIGHT be valid metapaths
+        
+        num_mps_selected = 0
+        selected_mps = []
+        
+        # print("Schema Walks: "+ str(schema_walks))
+        
+        while num_mps_selected < m and len(schema_walks) > 0:
+            candidate_mp = random.choice(schema_walks)
+            found_path = False
+            i = 0
+            while (not found_path) and i < len(source_nodes):
+                # print("s: " + str(source_nodes[i]))
+                # print("t: " + str(target_node))
+                # print("metapath: " + str(candidate_mp))
+                # print("reachable_nodes: " + str(graph.compute_metapath_reachable_nodes(source_nodes[i], candidate_mp)))
+                if target_node in graph.compute_metapath_reachable_nodes(source_nodes[i], candidate_mp): # there is a path from a source node to target node along candidate_mp
+                    found_path=True
+                i+=1
+                    
+            if found_path:
+                selected_mps.append(candidate_mp)
+                num_mps_selected+=1
+            schema_walks.remove(candidate_mp) # this O(n) operation could be avoided with better data structures
+    # print("Selected mps: " + str(selected_mps))
     # then, compute hetesim on the selected metapaths
     hs_scores = hetesim(graph, source_nodes, [target_node], selected_mps)
 
