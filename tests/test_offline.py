@@ -212,7 +212,7 @@ def test_compute_metapath_reachable_nodes(hg):
 
 def test_compute_fixed_length_metapaths(hg):
     mps = [hg._path_to_string(mp) for mp in hg.compute_fixed_length_metapaths('a', 'b', length=2)]
-    print(mps)
+    # _print(mps)
     assert 't1->r1->t2->r1->t1' in mps
     assert 't1->r1->t1->r1->t2' in mps
     

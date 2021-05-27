@@ -257,8 +257,8 @@ class HetGraph():
         
         returns an iterator of metapaths
         '''
-        source_type = node2type[source_node]
-        target_type = node2type[target_node]
+        source_type = self.node2type[source_node]
+        target_type = self.node2type[target_node]
 
         for candidate_mp in self.compute_fixed_length_schema_walks(source_type, target_type, length=length):
             if target_node in self.compute_metapath_reachable_nodes(source_node, candidate_mp): # if metapath exists
