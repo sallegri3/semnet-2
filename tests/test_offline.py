@@ -53,6 +53,8 @@ def test_constructor():
     assert len(hg.outgoing_edges['a']) == 2
     assert len(hg.incoming_edges['b']) == 2
     assert hg.outgoing_edge_weights['a']['r1']['b'] == 1
+    assert len(hg.schema_outgoing_edges) == 2
+    assert len(hg.schema_outgoing_edges['t1']['r1']) == 2
 
 
 def test_inverse_edges():
