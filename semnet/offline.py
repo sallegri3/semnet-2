@@ -218,15 +218,15 @@ class HetGraph():
 
         for out_dict, out_path in tqdm(self._fan_out(start_node, depth=fan_out_depth)):
             for in_dict, in_path in tqdm(self._fan_in(end_node, depth=fan_in_depth)):
-                if track_max_k:
-                    k1 = len(out_dict.keys())
-                    k2 = len(in_dict.keys())
-                    if k1 > self.max_one_sided_k:
-                        self.max_one_sided_k = k1
-                    if k2 > self.max_one_sided_k:
-                        self.max_one_sided_k = k2
                 joint_types = set(out_dict.keys()).intersection(set(in_dict.keys()))
                 for t in joint_types:
+                    if track_max_k:
+                        k1 = len(out_dict[t])
+                        k2 = len(in_dict[t])
+                        if k1 > self.max_one_sided_k:
+                            self.max_one_sided_k = k1
+                        if k2 > self.max_one_sided_k:
+                            self.max_one_sided_k = k2
                     # Excude nodes that we have already visited
                     middle_set = out_dict[t].intersection(in_dict[t]) - set(out_path + in_path)
                     for node in middle_set:
