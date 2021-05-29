@@ -8,7 +8,7 @@ import logging
 
 # Functions and submodules
 from collections import defaultdict as dd
-from tqdm.auto import tqdm, trange
+#from tqdm.auto import tqdm, trange
 
 # Set up logging
 logger = logging.getLogger('__file__')
@@ -94,7 +94,7 @@ class HetGraph():
 
         # Create dicts of outgoing and incoming edges
         logger.info("Constructing edge lists")
-        for e in tqdm(edgelist):
+        for e in edgelist:
             start_node = e['start_node']
             start_type = e['start_type']
             end_node = e['end_node']
@@ -130,7 +130,7 @@ class HetGraph():
 
         # Label each nodetype
         logger.info("Storing node type information")
-        for node, count_dict in tqdm(self.type_counts.items()):
+        for node, count_dict in self.type_counts.items():
             types = [k for k in count_dict.keys()]
             counts = np.array([c for c in count_dict.values()])
             node_type = types[counts.argmax()]
@@ -158,7 +158,7 @@ class HetGraph():
 
         # Inverse edges from outgoing
         logger.info("Adding inverse outgoing edges")
-        for node, d in tqdm(self.outgoing_edges.items()):
+        for node, d in self.outgoing_edges.items():
             for rel, neighbors in d.items():
                 # Note: Neighbors is a dict of format {node_type:set(nodes)}
                 if rel2inv[rel] in self.incoming_edges[node]:
@@ -177,7 +177,7 @@ class HetGraph():
 
         # Inverse edges from incoming
         logger.info("Adding inverse outgoing edges")
-        for node, d in tqdm(self.incoming_edges.items()):
+        for node, d in self.incoming_edges.items():
             for rel, neighbors in d.items():
                 
                 # Note: Neighbors is a dict of format {node_type:set(nodes)}
@@ -216,8 +216,8 @@ class HetGraph():
         if length % 2 == 1:
             fan_out_depth += 1
 
-        for out_dict, out_path in tqdm(self._fan_out(start_node, depth=fan_out_depth)):
-            for in_dict, in_path in tqdm(self._fan_in(end_node, depth=fan_in_depth)):
+        for out_dict, out_path in self._fan_out(start_node, depth=fan_out_depth):
+            for in_dict, in_path in self._fan_in(end_node, depth=fan_in_depth):
                 joint_types = set(out_dict.keys()).intersection(set(in_dict.keys()))
                 for t in joint_types:
                     if track_max_k:
@@ -243,8 +243,8 @@ class HetGraph():
         if length % 2 == 1:
             fan_out_depth += 1
 
-        for out_set, out_path in tqdm(self._schema_fan_out(start_node, depth=fan_out_depth)):
-            for in_set, in_path in tqdm(self._schema_fan_in(end_node, depth=fan_in_depth)):
+        for out_set, out_path in self._schema_fan_out(start_node, depth=fan_out_depth):
+            for in_set, in_path in self._schema_fan_in(end_node, depth=fan_in_depth):
                 middle_set = out_set.intersection(in_set)
                 for node in middle_set:
                     yield self._merge_paths(out_path, node, in_path)
