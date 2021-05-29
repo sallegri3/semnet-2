@@ -214,8 +214,10 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_meta
             hetesim_scores: dict of dicts
                 accessed as hetesim_scores[metapath][source][target]
     """
+    print("find_metapaths_from_schema_walks in hetesim_all_metapaths is:  " + str(find_metapaths_from_schema_walks))
     #find all metapaths
     if find_metapaths_from_schema_walks:
+        print("This is the new algorithm running!")
         metapaths=[]
         for s in source_nodes:
             for t in target_nodes:
@@ -223,6 +225,7 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_meta
                 for mp in mps:
                     if not mp in metapaths:
                         metapaths.append(mp)
+        print("New algorithm found " + str(len(metapaths)) +" metapaths.")
     else:
         metapaths = find_all_metapaths(graph, source_nodes, target_nodes, path_len)
     
@@ -246,7 +249,7 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
             path_len: int
                 must be even, length of metapaths
     """
-
+    print("This is the old, slower algorithm")
     #find all metapaths
     metapaths = []
     for s in source_nodes:
@@ -255,6 +258,7 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
             for mp in [graph._path_to_metapath(p) for p in paths]:
                 if not mp in metapaths:
                     metapaths.append(mp)
+    print("old algorithm found " + str(len(metapaths)) + " metapaths.")
 
     return metapaths
     
@@ -282,7 +286,7 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapat
             mean_hetesim: dict
                 dict mapping source node cui to mean hetesim score
     """
-
+    print("find_metapaths_from_schema_walks in mean_hetesim_scores is:  " + str(find_metapaths_from_schema_walks))
     hetesim_scores = hetesim_all_metapaths(graph, source_nodes, [target_node], path_len, find_metapaths_from_schema_walks=find_metapaths_from_schema_walks)
     
     mean_hetesim = {}
