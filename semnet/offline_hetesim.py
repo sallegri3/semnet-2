@@ -178,6 +178,8 @@ def _cos_similarity(vec_1, vec_2):
     #print('vec_1' + str(vec_1))
     #print('vec_2' + str(vec_2))
     # compute length of the two vectors
+    if not vec_1 or not vec_2:
+        return 0 
     vec_1_len = math.sqrt(math.fsum([j**2 for j in vec_1.values()]))
     vec_2_len = math.sqrt(math.fsum([j**2 for j in vec_2.values()]))
 
