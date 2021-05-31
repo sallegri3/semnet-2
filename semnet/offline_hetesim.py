@@ -189,7 +189,7 @@ def _cos_similarity(vec_1, vec_2):
     
     return dot_prod / (vec_1_len * vec_2_len)
     
-def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_metapaths_from_schema_walks=True):
+def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_metapaths_from_schema_walks=False):
     """
         computes hetesim for all metapaths of specified length between the source nodes and the target node
 
@@ -214,10 +214,8 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_meta
             hetesim_scores: dict of dicts
                 accessed as hetesim_scores[metapath][source][target]
     """
-    #print("find_metapaths_from_schema_walks in hetesim_all_metapaths is:  " + str(find_metapaths_from_schema_walks))
     #find all metapaths
     if find_metapaths_from_schema_walks:
-        #print("This is the new algorithm running!")
         metapaths=[]
         for s in source_nodes:
             for t in target_nodes:
@@ -263,7 +261,7 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
     return metapaths
     
 
-def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapaths_from_schema_walks=True):
+def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapaths_from_schema_walks=False):
     """
         Inputs:
             graph: HetGraph
@@ -305,7 +303,7 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapat
     
     return mean_hetesim
 
-def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, epsilon, r, find_metapaths_from_schema_walks=True):
+def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, epsilon, r, find_metapaths_from_schema_walks=False):
     """
 
     This function computes an approximate mean hetesim score for each source node with respect to a fixed target node.  The approximation is taken by selecting only m metapaths for computation of hetesim, and taking the average of those m scores.  m is selected based on error tolerance epsilon and r.
