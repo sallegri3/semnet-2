@@ -77,6 +77,8 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
             i+=1
         else: #cur_node is dead end
             bad_nodes[i-2].add(cur_node)
+            if i == 1: #back at start
+                return (0,0)
             cur_node = node_stack.pop()
             i-=1
     return (0,0)

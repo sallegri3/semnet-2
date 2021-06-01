@@ -178,6 +178,8 @@ def _cos_similarity(vec_1, vec_2):
     #print('vec_1' + str(vec_1))
     #print('vec_2' + str(vec_2))
     # compute length of the two vectors
+    if not vec_1 or not vec_2:
+        return 0 
     vec_1_len = math.sqrt(math.fsum([j**2 for j in vec_1.values()]))
     vec_2_len = math.sqrt(math.fsum([j**2 for j in vec_2.values()]))
 
@@ -189,7 +191,7 @@ def _cos_similarity(vec_1, vec_2):
     
     return dot_prod / (vec_1_len * vec_2_len)
     
-def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_metapaths_from_schema_walks=True):
+def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_metapaths_from_schema_walks=False):
     """
         computes hetesim for all metapaths of specified length between the source nodes and the target node
 
@@ -223,6 +225,7 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_meta
                 for mp in mps:
                     if not mp in metapaths:
                         metapaths.append(mp)
+        #print("New algorithm found " + str(len(metapaths)) +" metapaths.")
     else:
         metapaths = find_all_metapaths(graph, source_nodes, target_nodes, path_len)
     
@@ -246,7 +249,7 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
             path_len: int
                 must be even, length of metapaths
     """
-
+    #print("This is the old, slower algorithm")
     #find all metapaths
     metapaths = []
     for s in source_nodes:
@@ -255,11 +258,12 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
             for mp in [graph._path_to_metapath(p) for p in paths]:
                 if not mp in metapaths:
                     metapaths.append(mp)
+    #print("old algorithm found " + str(len(metapaths)) + " metapaths.")
 
     return metapaths
     
 
-def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapaths_from_schema_walks=True):
+def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapaths_from_schema_walks=False):
     """
         Inputs:
             graph: HetGraph
@@ -282,7 +286,7 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapat
             mean_hetesim: dict
                 dict mapping source node cui to mean hetesim score
     """
-
+    #print("find_metapaths_from_schema_walks in mean_hetesim_scores is:  " + str(find_metapaths_from_schema_walks))
     hetesim_scores = hetesim_all_metapaths(graph, source_nodes, [target_node], path_len, find_metapaths_from_schema_walks=find_metapaths_from_schema_walks)
     
     mean_hetesim = {}
@@ -301,7 +305,7 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapat
     
     return mean_hetesim
 
-def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, epsilon, r, find_metapaths_from_schema_walks=True):
+def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, epsilon, r, find_metapaths_from_schema_walks=False):
     """
 
     This function computes an approximate mean hetesim score for each source node with respect to a fixed target node.  The approximation is taken by selecting only m metapaths for computation of hetesim, and taking the average of those m scores.  m is selected based on error tolerance epsilon and r.
