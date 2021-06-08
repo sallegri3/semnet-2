@@ -117,7 +117,7 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
             probability of being within error tolerance
     """
      
-    c = (5 + 2*math.sqrt(5))/2
+    c = (5 + 4*math.sqrt(2))/4
     C = 2*(c + math.sqrt(c**2+4*epsilon))**2 + epsilon*(c+math.sqrt(c**2+4*epsilon))
     #print("C: " + str(C))
     #print("c: " + str(c))
@@ -443,7 +443,7 @@ def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, 
         selected_mps = mps
         
     #compute arguments for randomized_pruned_hetesim
-    c = (5 + 2*math.sqrt(5))/2
+    c = (5 + 4*math.sqrt(2))/4
     N = math.ceil((4 * c * epsilon / 2 * k_max) / (epsilon**2) * math.log(4 * m * num_source_nodes * k_max / r1))
     
     # the actual hetesim computations
