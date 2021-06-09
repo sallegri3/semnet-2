@@ -346,7 +346,7 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
         #  select m metapaths for computation of hetesim
         mps = find_all_metapaths(graph, source_nodes, [target_node], path_len)
         if m < len(mps):
-            selected_mps = random.choices(mps, m)
+            selected_mps = random.choices(mps, k=m)
         else:
             selected_mps = mps
     else:

@@ -438,7 +438,7 @@ def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, 
     
     # and select m metapaths
     if(m < len(mps)):
-        selected_mps = random.choices(mps, m)
+        selected_mps = random.choices(mps,k= m)
     else:
         selected_mps = mps
         
