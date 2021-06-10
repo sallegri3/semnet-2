@@ -118,7 +118,7 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
     """
      
     c = (5 + 4*math.sqrt(2))/4
-    C = 2*(c + math.sqrt(c**2+4*epsilon))**2 + epsilon*(c+math.sqrt(c**2+4*epsilon))
+    C = 2*(c + math.sqrt(c**2+2*epsilon))**2 + epsilon*(c+math.sqrt(c**2+2*epsilon))
     #print("C: " + str(C))
     #print("c: " + str(c))
     #print("epsilon: " + str(epsilon))
@@ -438,7 +438,7 @@ def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, 
     
     # and select m metapaths
     if(m < len(mps)):
-        selected_mps = random.sample(mps, m)
+        selected_mps = random.choices(mps,k= m)
     else:
         selected_mps = mps
         
