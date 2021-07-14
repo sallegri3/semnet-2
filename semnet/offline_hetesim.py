@@ -4,6 +4,7 @@ This module implements deterministic hetesim for the datastructure HetGraph give
 
 import math
 import random
+import time
 
 def hetesim(graph, start_nodes, end_nodes, metapaths):
     """
@@ -337,7 +338,7 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
             mean_hetesim: dict
                 dict mapping source node cui to approximate mean hetesim score
     """
-
+    start_1 = time.perf_counter()
     # first compute m
     num_source_nodes = len(source_nodes)
     m = math.ceil(1 / (2 * epsilon ** 2) * math.log(2 * num_source_nodes / r))
@@ -381,7 +382,9 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
                 num_mps_selected+=1
     # print("Selected mps: " + str(selected_mps))
     # then, compute hetesim on the selected metapaths
+    start_2 = time.perf_counter()
     hs_scores = hetesim(graph, source_nodes, [target_node], selected_mps)
+    start_3 = time.perf_counter()
 
     # finally, take averages
     num_metapaths = len(selected_mps)
@@ -392,6 +395,7 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
             if str(mp) in hs_scores and s in hs_scores[str(mp)]:
                 total_score += hs_scores[str(mp)][s][target_node]
         mean_hetesim[s] = total_score / num_metapaths
-
-    return mean_hetesim
+    end_3 = time.perf_counter()
+    times = [start_2 - start_1, start_3 - start_2, end_3 - start_3]
+    return [times, mean_hetesim]
 
