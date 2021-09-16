@@ -2,8 +2,7 @@
 This file implements an offline graph datastructure for SemNet to speed up computation
 '''
 # Imports
-import numpy as np 
-import torch
+import numpy as np
 import logging
 
 # Functions and submodules
