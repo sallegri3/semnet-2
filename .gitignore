@@ -1,3 +1,4 @@
 .vscode/
 .DS_Store
 semnet/__pycache__
+edges_updated.csv
