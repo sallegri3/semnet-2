@@ -1,14 +1,21 @@
+
+'''
+setup.py file necessary to install SemNet package. To install, follow
+instructions in readme.
+'''
+
 from setuptools import setup
 
 setup(name='semnet',
-	version='0.1.1',
+	version='2.0.0',
 	description='A package for working with Semantic Medline data',
-	url='https://github.gatech.edu/asedler3/semnet',
-	author='Andrew Sedler',
-	author_email='asedler3@gatech.edu',
+	url='https://github.gatech.edu/pathology-dynamics/sement-v2',
+	author='Anna Kirkpatrick',
+	author_email='akirkpatrick3@gatech.edu',
 	packages=['semnet'],
-	install_requires=['hetio==0.2.11', 'xarray==0.16.2', 'numpy==1.19.5','py2neo==3.1.2', 'pandas==1.1.5', 
-	'scikit-learn>=0.19.1', 'scipy==1.5.4', 'matplotlib==3.3.3', 'tqdm>=4.23.4', 'seaborn==0.8.1'],
+	install_requires=[
+		'numpy==1.20.3',
+		'logging==0.5.1.2'],
 	include_package_data=True,
 	package_data={
 		'semnet': ['data/*']
