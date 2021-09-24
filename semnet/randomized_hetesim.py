@@ -1,15 +1,13 @@
+
 """
 This module implements randomized algorithms for computation of HeteSim and Pruned HeteSim.
 It is designed to work with the datastructure HetGraph given in offline.py
 """
 
+
 # imports
 import math
 import random
-import numpy as np
-import pandas as pd
-
-
 
 
 def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, walk_forward=True):
@@ -63,14 +61,14 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
         else:
             neighbors = list( graph.incoming_edges[cur_node][metapath[2*path_len + 1 - 2*i]][metapath[2*path_len - 2*i]] - bad_nodes[i-1] )
         #print("neighbors: " + str(neighbors))
-        
+
         #step forward if we can
         if len(neighbors) >0:
             if walk_forward:
                 edge_weights = [graph.outgoing_edge_weights[cur_node][metapath[2*i - 1]][y] for y in neighbors]
             else:
                 edge_weights = [graph.incoming_edge_weights[cur_node][metapath[2*path_len + 1 - 2*i]][y] for y in neighbors]
-    
+
             #print(edge_weights)
             node_stack.append(cur_node)
             cur_node = random.choices(neighbors, weights=edge_weights)[0] 
@@ -82,8 +80,8 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
             cur_node = node_stack.pop()
             i-=1
     return (0,0)
-    
-    
+
+
 def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, epsilon, r):
     """
     computes a randomized approximation to pruned hetesim, using a just-in-time pruning strategy
@@ -116,7 +114,7 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
         r: float
             probability of being within error tolerance
     """
-     
+
     c = (5 + 4*math.sqrt(2))/4
     C = 2*(c + math.sqrt(c**2+2*epsilon))**2 + epsilon*(c+math.sqrt(c**2+2*epsilon))
     #print("C: " + str(C))
@@ -127,7 +125,6 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
     N = math.ceil(math.ceil(C/(epsilon**2))*k_max*math.log(4*k_max/(1-r)))
     print("Computed value of N for randomized pruned hs:  " + str(N))
     return randomized_pruned_hetesim_given_N(graph, start_nodes, end_nodes, metapaths, k_max, N)
-    
 
 
 def randomized_pruned_hetesim_given_N(graph, start_nodes, end_nodes, metapaths, k_max, N):
@@ -200,7 +197,7 @@ def randomized_pruned_hetesim_given_N(graph, start_nodes, end_nodes, metapaths, 
                 fixed_s_dict[t] = _cos_similarity(node_prob_left[left_half][s], node_prob_right[right_half][t])
             fixed_mp_dict[s] = fixed_s_dict
         phs[str(mp)] = fixed_mp_dict
-        
+
     return phs
 
 
@@ -208,20 +205,20 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     """
     computes an approximation to the probability vector used in computing pruned hetesim,
     using N iterations that end at the end of the metapath (NOT dead ends)
-    
+
         Inputs:
         graph: HetGraph
             underlying graph
-            
+
         start_node: str
             cui of start node
-        
+
         metapath: tbd
             metapath for which to approximate probability vector
-            
+
         N: int
             number of random walks which must make it to the end of the metapath
-        
+
     Outputs:
         approx_hs_vector: dict mapping center-layer nodes to probabilities
            approximate pruned hetesim probability vector for random walks along given metapath from start_node
@@ -253,6 +250,7 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
 
     return node_freqs
 
+
 def _cos_similarity(vec_1, vec_2):
     if not vec_1 or not vec_2:
         return 0 # if either dictionary is empty, hs will be 0, so return 0
@@ -269,9 +267,6 @@ def _cos_similarity(vec_1, vec_2):
             dot_prod += vec_1[k] * vec_2[k]
     
     return dot_prod / (vec_1_len * vec_2_len)
-        
-
-
 
 
 def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
@@ -279,30 +274,30 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     computes an approximation to the probability vector used in computing pruned hetesim,
     using N iterations that end at the end of the metapath (NOT dead ends)
     Walks backward along metapath, starting the end_node
-    
+
         Inputs:
         graph: HetGraph
             underlying graph
-            
+
         end_node: str
             cui of end node
-        
+
         metapath: list of str
             metapath for which to approximate probability vector
             format [node_type, edge_type, node_type, ... , edge_type, node_type]
-            
+
         N: int
             number of random walks which must make it to the end of the metapath
-        
+
     Outputs:
         approx_hs_vector: pandas df
             approximate pruned hetesim probability vector for random walks along reverse of given metapath 
             from end_node
-        
+
     """
-    
+
     path_len = int((len(metapath)-1)/2)
-    
+
     # set up dictionary to hold frequencies of encountering each node
     node_freqs = {}    
 
@@ -325,11 +320,12 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     for node in node_freqs:
         node_freqs[node]/=N
     return node_freqs
-    
+
+
 def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
     """
         finds all metapaths with given start/end nodes and of given length
-    
+
         Inputs:
             graph: HetGraph
                 graph where hetesim is to be computed
@@ -342,7 +338,7 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
 
             path_len: int
                 path length, must be even
-        
+
         Output:
             (metapaths, max_one_sided_k): tuple (list, int)
                 metapaths is list of metapaths, max_one_sided_k is the max one-sided number of reachable center layer nodes.
@@ -356,11 +352,12 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
             for mp in [graph._path_to_metapath(p) for p in paths]:
                 if not mp in metapaths:
                     metapaths.append(mp)
-    
+
 
     max_one_sided_k = graph.get_max_one_sided_k()
-    
+
     return (max_one_sided_k, metapaths)
+
 
 def randomized_pruned_hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, epsilon, r):
     """
@@ -378,10 +375,10 @@ def randomized_pruned_hetesim_all_metapaths(graph, source_nodes, target_nodes, p
 
             path_len: int
                 path length, must be even
-                
+
             epsilon: float
                 error tolerance
-                
+
             r: float
                 probability of achieving error tolerance
 
@@ -392,11 +389,12 @@ def randomized_pruned_hetesim_all_metapaths(graph, source_nodes, target_nodes, p
 
     # find metapaths
     one_sided_k, metapaths = find_all_metapaths(graph, source_nodes, target_nodes, path_len)
-    
+
     k = 2 * one_sided_k
-    
+
     # compute randomzied pruned hetesim
     return randomized_pruned_hetesim(graph, source_nodes, target_nodes, metapaths, k, epsilon, r)
+
 
 def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, epsilon, r):
     """
@@ -416,10 +414,10 @@ def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, 
 
             path_len: int
                 path length, must be even
-                
+
             epsilon: float
                 (additive) error tolerance
-                
+
             r: float
                 probability of achieving error tolerance
 
@@ -428,24 +426,24 @@ def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, 
     """
     #find all metapaths
     k_one_sided, mps = find_all_metapaths(graph, source_nodes, [target_node], path_len)
-    
-    
+
+
     #compute the required number of metapaths
     k_max = 2*k_one_sided
     num_source_nodes = len(source_nodes)
     r1 = r * (4 * math.log(2 * num_source_nodes / r) * k_max) / (4 * math.log(2*num_source_nodes / r) * k_max + epsilon**2)
     m = math.ceil(2 / (epsilon**2) * math.log(2*num_source_nodes / (r - r1)))
-    
+
     # and select m metapaths
     if(m < len(mps)):
         selected_mps = random.choices(mps,k= m)
     else:
         selected_mps = mps
-        
+
     #compute arguments for randomized_pruned_hetesim
     c = (5 + 4*math.sqrt(2))/4
     N = math.ceil((4 * c * epsilon / 2 * k_max) / (epsilon**2) * math.log(4 * m * num_source_nodes * k_max / r1))
-    
+
     # the actual hetesim computations
     pruned_hs_scores = randomized_pruned_hetesim_given_N(graph, source_nodes, [target_node], selected_mps, k_max, N)
     # take means
