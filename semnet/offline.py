@@ -1,27 +1,34 @@
-'''
-This file implements an offline graph datastructure for SemNet to speed up computation
-'''
-# Imports
-import numpy as np
-import logging
 
-# Functions and submodules
+'''
+This file implements an offline graph datastructure for SemNet to speed up computation.
+'''
+
+
+# Imports
+import logging
 from collections import defaultdict as dd
-#from tqdm.auto import tqdm, trange
+import numpy as np
+
 
 # Set up logging
 logger = logging.getLogger('__file__')
 
+
 class HetGraph():
+    """
+    Class for constructing SemNet graph datastructure.
+    """
+
     def __init__(self, edgelist=None, rel2inv=None):
         '''
         Init heterogeneous graph from a weighted edge list
 
-        Format: 
+        Format:
             Initialize two edge dicts for incoming and outgoing edges.
                 * Dict keys are node CUIs
                 * Dict values are dictionaryies
         '''
+
         # Edges stored as nested default dicts
         self.outgoing_edges = dd( # Source node
                                 lambda: dd(  # Edge type
@@ -58,19 +65,21 @@ class HetGraph():
         self.type_counts = dd(lambda: dd(int))
         self.node2type = {}
         self.relations = set([])
-        
+
         self.max_one_sided_k = 0
 
         # Construct graph if edelist if provided
         if edgelist is not None:
             self.construct_graph(edgelist, rel2inv)
 
-        
+
     def get_max_one_sided_k(self):
         return self.max_one_sided_k
-        
+
+
     def reset_max_one_sided_k(self):
         self.max_one_sided_k = 0
+
 
     def construct_graph(self, edgelist, rel2inv=None, add_inverses=True):
         '''
@@ -82,10 +91,8 @@ class HetGraph():
             * end_type:     Node type of ending node
             * relation:    Relation between starting and ending node
             * weight:  Weight of edge (i.e. number of papers in which it appears)
-
-        TODO:
-            * Batch group nodes by type
         '''
+
         if add_inverses:
             if rel2inv is None:
                 print("Cannot add inverse edges without mapping of edge to inverse!")
@@ -100,17 +107,17 @@ class HetGraph():
             end_type = e['end_type']
             relation = e['relation']
             weight = e['weight']
-            
+
             # add to schema graph, as needed
             self.schema_outgoing_edges[start_type][relation].add(end_type) # note: sets only add an element if not already present
             self.schema_incoming_edges[end_type][relation].add(start_type)
-            
+
             # add to main graph
             self.outgoing_edges[start_node][relation][end_type].add(end_node)
             self.outgoing_edge_weights[start_node][relation][end_node] =int(weight)
             self.incoming_edges[end_node][relation][start_type].add(start_node)
             self.incoming_edge_weights[end_node][relation][start_node] =int(weight)
-            
+
             self.relations.add(relation)
 
             if rel2inv is not None and add_inverses==True:
@@ -139,8 +146,6 @@ class HetGraph():
         rel2self = {rel:rel for rel in self.relations}
         self.x2type = {**self.node2type, **rel2self}
 
-        
-
 
     def add_inverse_edges(self, rel2inv):
         '''
@@ -151,6 +156,7 @@ class HetGraph():
             rel2inv: dict
                 Dict mapping each relation to its inverse
         '''
+
         # Make sure we didn't leave anything out of rel2inv
         inv_rel2inv = {val:key for key, val in rel2inv.items()}
         rel2inv = {**inv_rel2inv, **rel2inv}
@@ -178,7 +184,7 @@ class HetGraph():
         logger.info("Adding inverse outgoing edges")
         for node, d in self.incoming_edges.items():
             for rel, neighbors in d.items():
-                
+
                 # Note: Neighbors is a dict of format {node_type:set(nodes)}
                 if rel2inv[rel] in self.outgoing_edges[node]:
                     for node_type, node_set in neighbors.items():
@@ -209,6 +215,7 @@ class HetGraph():
             * Parallelization
             * Optimization for using multiple sets of source/target nodes
         '''
+
         # Compute fan out and fan in
         fan_out_depth = length // 2
         fan_in_depth = length // 2
@@ -230,12 +237,14 @@ class HetGraph():
                     middle_set = out_dict[t].intersection(in_dict[t]) - set(out_path + in_path)
                     for node in middle_set:
                         yield self._merge_paths(out_path, node, in_path)
-                        
+
+
     def compute_fixed_length_schema_walks(self, start_node, end_node, length=2):
         '''
         Compute all walks in schema graph of a fixed length
 
         '''
+
         # Compute fan out and fan in
         fan_out_depth = length // 2
         fan_in_depth = length // 2
@@ -247,13 +256,14 @@ class HetGraph():
                 middle_set = out_set.intersection(in_set)
                 for node in middle_set:
                     yield self._merge_paths(out_path, node, in_path)
-                    
+
+
     def compute_fixed_length_metapaths(self, source_node, target_node, length=2):
         '''
         Computes all metapaths of fixed length between source and target nodes 
         by first computing all possible metapaths in the schema and then 
         checking to see if each metapath actually exists
-        
+
         returns an iterator of metapaths
         '''
         source_type = self.node2type[source_node]
@@ -262,14 +272,11 @@ class HetGraph():
         for candidate_mp in self.compute_fixed_length_schema_walks(source_type, target_type, length=length):
             if target_node in self.compute_metapath_reachable_nodes(source_node, candidate_mp): # if metapath exists
                 yield candidate_mp
-                
-            
-        
 
 
     def _fan_out(self, node, depth=1, curr_path=[]):
         '''
-        Recursively compute all reachable target nodes by path of length 
+        Recursively compute all reachable target nodes by path of length
             $DEPTH from $NODE.
 
         Only follows outgoing edges
@@ -291,6 +298,7 @@ class HetGraph():
                 next_nodes: Dict of terminal nodes at end of path
                 current_path: Path used to reach each node in next_nodes
         '''
+
         # If depth is 0, just return current node
         if depth == 0:
             # yield ({node}, [])
@@ -311,7 +319,9 @@ class HetGraph():
                 for node_type, node_set in next_dict.items():
                     for next_node in node_set:
                         if next_node not in current_path:
-                            yield from self._fan_out(next_node, curr_path=current_path, depth=depth-1)
+                            yield from self._fan_out(next_node,\
+                                curr_path=current_path, depth=depth-1)
+
 
     def _schema_fan_out(self, node, depth=1, curr_path=[]):
         '''
@@ -337,6 +347,7 @@ class HetGraph():
                 next_nodes: set of terminal nodes at end of path
                 current_path: Path used to reach each node in next_nodes
         '''
+
         # If depth is 0, just return current node (is a type, because in schema)
         if depth == 0:
             # yield ({node}, [])
@@ -356,14 +367,15 @@ class HetGraph():
                 current_path = self._merge_paths(curr_path, node, next_path)
                 for next_node in next_nodes:
                     yield from self._schema_fan_out(next_node, curr_path=current_path, depth=depth-1)
-                            
-                            
+
+
     def _fan_in(self, node, curr_path=[], depth=1):
         '''
         Recursively compute all nodes $DEPTH steps away that feed into $NODE
 
         Similar to `_fan_out()` but looks at incoming edges instead of outgoing edges.
         '''
+
         # If depth is 0, just return current node
         if depth == 0:
             # yield ({node}, [])
@@ -384,7 +396,8 @@ class HetGraph():
                 for node_type, node_set in next_dict.items():
                     for next_node in node_set:
                         if next_node not in current_path:
-                            yield from self._fan_in(next_node, curr_path=current_path, depth=depth-1)
+                            yield from self._fan_in(next_node,\
+                                curr_path=current_path, depth=depth-1)
 
 
     def _schema_fan_in(self, node, curr_path=[], depth=1):
@@ -393,10 +406,11 @@ class HetGraph():
 
         Similar to `_schema_fan_out()` but looks at incoming edges instead of outgoing edges.
         '''
+
         # If depth is 0, just return current node
         if depth == 0:
             yield ({node}, [])
-        
+
 
         # If depth is 1, return each set of neighbors and the path used to get there
         elif depth == 1:
@@ -411,7 +425,9 @@ class HetGraph():
             for (next_path, next_nodes) in self.schema_incoming_edges[node].items():
                 current_path = self._merge_paths(next_path, node, curr_path)
                 for next_node in next_nodes:
-                     yield from self._schema_fan_in(next_node, curr_path=current_path, depth=depth-1)
+                     yield from self._schema_fan_in(next_node,\
+                        curr_path=current_path, depth=depth-1)
+
 
     def _get_edges_to_nbhrs(self, node):
         '''
@@ -430,18 +446,18 @@ class HetGraph():
             edge_type: list of str
                 Edge leading to next node group
         '''
+
         # Get edges to next node
         for edge_type, node_group in self.incoming_edges[node].items():
             # for node_type, node_set in node_group:
             yield node_group, [edge_type]
 
-    # def _get_edges_from_nbhrs(self, node)
-
 
     def _merge_paths(self, curr_path, curr_node, next_path):
         '''
-        Merge path segments together 
+        Merge path segments together.
         '''
+
         if type(curr_path) == str:
             if len(curr_path) == 0:
                 curr_path = []
@@ -457,13 +473,14 @@ class HetGraph():
                 next_path = []
             else:
                 next_path = [next_path]
-        
+
         if (type(curr_path) != list 
             or type(curr_node) != list
             or type(next_path) != list):
             raise TypeError("Arguments must be of type 'str' or 'list'")
 
         return curr_path + curr_node + next_path
+
 
     def compute_metapath_reachable_nodes(self, source_node, metapath):
         """
@@ -490,33 +507,23 @@ class HetGraph():
             cur_node_type = metapath[2*d]
             next_node_type = metapath[2*(d+1)]
             relation = metapath[2*d + 1]
-            
+
             for node in reachable_nodes_by_depth[d]:
                 reachable_nodes_by_depth[d+1] = reachable_nodes_by_depth[d+1].union(self.outgoing_edges[node][relation][next_node_type])
-                
-        return reachable_nodes_by_depth[mp_len]  
 
+        return reachable_nodes_by_depth[mp_len]
 
-        
 
     def _path_to_metapath(self, path):
         '''
-        Get metapath from a path segment
+        Get metapath from a path segment.
         '''
+
         return [self.x2type[x] for x in path]
 
 
     def _path_to_string(self, path):
         '''
-        Turn (meta)path from list into string
+        Turn (meta)path from list into string.
         '''
         return '->'.join(path)
-
-
-    def _score_metapath(self, metapath, path_instances=None):
-        '''
-        Get HeteSim score of individual metapath
-        '''
-        raise NotImplementedError
-
-        
