@@ -7,7 +7,6 @@ This module implements deterministic hetesim for the datastructure HetGraph give
 import math
 import random
 
-
 def hetesim(graph, start_nodes, end_nodes, metapaths):
     """
     computes all hetesim scores between elements of start_nodes and end_nodes,
@@ -33,9 +32,18 @@ def hetesim(graph, start_nodes, end_nodes, metapaths):
 
     # figure out what the set of first halves of metapaths is
     path_len = int((len(metapaths[0])-1)/2)
+
+    if path_len % 2 == 1:
+        cut_idx_left = path_len
+        cut_idx_right = path_len + 1
+    else:
+        cut_idx_left = path_len + 1
+        cut_idx_right = path_len
+
     left_halves = []
     for mp in metapaths:
-        left_mp = mp[0:path_len + 1]
+        left_mp = mp[0:cut_idx_left]
+
         if not left_mp in left_halves:
             left_halves.append(left_mp)
 
@@ -45,13 +53,14 @@ def hetesim(graph, start_nodes, end_nodes, metapaths):
         fixed_mp_dict = {}
         for  s in start_nodes:
             fixed_mp_dict[s] =  _compute_hs_vector_from_left(graph, s, lh)
-            #print(fixed_mp_dict[s])
+
         node_prob_left[str(lh)] = fixed_mp_dict
 
     # figure out what the set of second halves of metapaths is
     right_halves= []
     for mp in metapaths:
-        right_mp = mp[path_len:]
+        right_mp = mp[cut_idx_right:]
+
         if not right_mp in right_halves:
             right_halves.append(right_mp)
 
@@ -61,19 +70,28 @@ def hetesim(graph, start_nodes, end_nodes, metapaths):
         fixed_mp_dict = {}
         for  t in end_nodes:
             fixed_mp_dict[t] =  _compute_hs_vector_from_right(graph, t, rh)
-            #print(fixed_mp_dict[t])
+
         node_prob_right[str(rh)] = fixed_mp_dict
 
     # create output dict hs[mp][s][t]
     hs =  {}
     for mp in metapaths:
-        left_half = str(mp[0:path_len+1])
-        right_half =  str(mp[path_len:])
+        left_half = str(mp[0:cut_idx_left])
+        right_half =  str(mp[cut_idx_right:])
         fixed_mp_dict = {}
         for s in start_nodes:
             fixed_s_dict = {}
             for t in end_nodes:
-                fixed_s_dict[t] = _cos_similarity(node_prob_left[left_half][s], node_prob_right[right_half][t])
+                left_vec = node_prob_left[left_half][s]
+                right_vec = node_prob_right[right_half][t]
+
+                if path_len % 2 == 1:
+                    new_vecs = _generate_middle_node_odd(graph, left_vec, right_vec, mp)
+                    left_vec = new_vecs[0]
+                    right_vec = new_vecs[1]
+
+                fixed_s_dict[t] = _cos_similarity(left_vec, right_vec)
+
             fixed_mp_dict[s] = fixed_s_dict
         hs[str(mp)] = fixed_mp_dict
 
@@ -197,6 +215,79 @@ def _cos_similarity(vec_1, vec_2):
             dot_prod += vec_1[k] * vec_2[k]
 
     return dot_prod / (vec_1_len * vec_2_len)
+
+
+def _generate_middle_node_odd(graph, lh_vec, rh_vec, metapath):
+    """
+    Generates artificial center-layer left-hand-side and right-hand-side probability 
+    vectors for odd-length metapaths
+
+        Inputs:
+        graph: HetGraph
+            underlying graph
+
+        vec_1: dict
+            left-hand-side probability vector up to metapath length - 1 node
+        
+        vec_2: dict
+            right-hand-side probability vector up to metapath length + 1 node
+
+        metapath: list of strs
+            metapath for which to compute probability vector
+
+
+    Outputs:
+        [generated_left_vec, generated_right_vec]: list of dicts
+            generated right-hand-side and left-hand-side probability vectors 
+            for center node layer for odd-length metapaths.
+    """
+
+    path_len = int((len(metapath) - 1) / 2)
+
+    generated_left_vec = {}
+    generated_right_vec = {}
+    matches_right = {}
+
+    middle_edge = path_len
+    right_edge_node_idx = path_len + 1
+
+    for current_node in lh_vec.keys():
+        outgoing_nodes = graph.outgoing_edges[current_node][metapath[middle_edge]][metapath[right_edge_node_idx]]
+        matches_left = []
+
+        for neighbor in outgoing_nodes:
+            if neighbor in rh_vec:
+
+                if neighbor in matches_right:
+                    matches_right[neighbor].append(current_node)
+                else:
+                    matches_right[neighbor] = [current_node]
+
+                matches_left.append(neighbor)
+
+        if len(matches_left) != 0:
+            weighted_degree = sum([graph.outgoing_edge_weights[current_node][metapath[middle_edge]][m] for m in matches_left])
+
+            for m in matches_left:
+                new_prob = lh_vec[current_node] * graph.outgoing_edge_weights[current_node][metapath[middle_edge]][m] / weighted_degree
+                middle_node = 'E_' + str(current_node) + '-' + str(m)
+
+                generated_left_vec[middle_node] = new_prob
+
+    for current_node in matches_right:
+        matches_right_list = matches_right[current_node]
+
+        if len(matches_right_list) != 0:
+            weighted_degree = sum([graph.incoming_edge_weights[current_node][metapath[middle_edge]][m] for m in matches_right_list])
+
+            for m in matches_right_list:
+                new_prob = rh_vec[current_node] * graph.incoming_edge_weights[current_node][metapath[middle_edge]][m] / weighted_degree
+                middle_node = 'E_' + str(m) + '-' + str(current_node)
+
+                generated_right_vec[middle_node] = new_prob
+
+
+    return [generated_left_vec, generated_right_vec]
 
 
 def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_metapaths_from_schema_walks=False):

@@ -175,10 +175,10 @@ class HetGraph():
                         # print("rel2inv[rel]:", rel2inv[rel])
                         # print()
                         self.incoming_edges[node][rel2inv[rel]][node_type] |= node_set
-                        self.schema_incoming_edges[node2type[node]][rel2inv[rel]].add(node_type)
+                        # self.schema_incoming_edges[node2type[node]][rel2inv[rel]].add(node_type)
                 else:
                     self.incoming_edges[node][rel2inv[rel]] = neighbors
-                    self.schema_incoming_edges[node2type[node]][rel2inv[rel]] = {node_type}
+                    # self.schema_incoming_edges[node2type[node]][rel2inv[rel]] = {node_type}
 
         # Inverse edges from incoming
         logger.info("Adding inverse outgoing edges")
@@ -189,10 +189,10 @@ class HetGraph():
                 if rel2inv[rel] in self.outgoing_edges[node]:
                     for node_type, node_set in neighbors.items():
                         self.outgoing_edges[node][rel2inv[rel]][node_type] |= node_set
-                        self.schema_outgoing_edges[node2type[node]][rel2inv[rel]].add(node_type)
+                        # self.schema_outgoing_edges[node2type[node]][rel2inv[rel]].add(node_type)
                 else:
                     self.outgoing_edges[node][rel2inv[rel]] = neighbors
-                    self.schema_outgoing_edges[node2type[node]][rel2inv[rel]] = {node_type}
+                    # self.schema_outgoing_edges[node2type[node]][rel2inv[rel]] = {node_type}
 
         # Add inverse relations to relation list
         for key, val in rel2inv.items():
