@@ -14,8 +14,8 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
     """
     take a random walk in graph along a specified metapath, backtracking if you find a dead end
 
-    Inputs:
-    ______
+    inputs:
+    -------
         graph: Hetgraph
             graph to walk on
 
@@ -29,14 +29,14 @@ def restricted_random_walk_on_metapath(graph, start_node, metapath, bad_nodes, w
         walk_forward: boolean
             if True, walk forward along (meta)path edges, starting from position 0 in metapath
             if False, walk backward on path edges, starting from end of metapath
-            
+    
         bad_nodes: list of sets
             bad_nodes[i] is a set giving all nodes that are dead-ends at step i
 
-    Returns:
-    ________
+    outputs:
+    --------
         (bad_nodes, node): (list of lists, str)
-        bad_nodes: updated list of dead end nodes    
+        bad_nodes: updated list of dead end nodes
         node: the node arrived at when the end of the metapath is reached, or the dead end node
         OR returns (0,0) if no path exists
     """
@@ -89,8 +89,8 @@ def randomized_pruned_hetesim(graph, start_nodes, end_nodes, metapaths, k_max, e
     Let PH be the true pruned HeteSim value.
     Then, |PH_e - PH| < epsilon with probability at least r
 
-    Inputs:
-    _______
+    inputs:
+    -------
         graph: HetGraph
             underlying graph
         
@@ -132,8 +132,8 @@ def randomized_pruned_hetesim_given_N(graph, start_nodes, end_nodes, metapaths, 
     computes a randomized approximation to pruned hetesim, using a just-in-time pruning strategy
     Takes N random walks for each one-sided computation
 
-    Inputs:
-    _______
+    inputs:
+    -------
         graph: HetGraph
             underlying graph
         
@@ -148,7 +148,7 @@ def randomized_pruned_hetesim_given_N(graph, start_nodes, end_nodes, metapaths, 
             format [node_type, edge_type, node_type, ... , edge_type, node_type]
             All metapaths must have the same length and length must be even
         
-        N: int 
+        N: int
             number of walks to talk for each one-sided pruned hetesim compuation
     """
 
@@ -206,7 +206,8 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
     computes an approximation to the probability vector used in computing pruned hetesim,
     using N iterations that end at the end of the metapath (NOT dead ends)
 
-        Inputs:
+    inputs:
+    -------
         graph: HetGraph
             underlying graph
 
@@ -219,7 +220,8 @@ def _compute_approx_pruned_hs_vector_from_left(graph, start_node, metapath, N):
         N: int
             number of random walks which must make it to the end of the metapath
 
-    Outputs:
+    outputs:
+    --------
         approx_hs_vector: dict mapping center-layer nodes to probabilities
            approximate pruned hetesim probability vector for random walks along given metapath from start_node
         
@@ -275,7 +277,8 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
     using N iterations that end at the end of the metapath (NOT dead ends)
     Walks backward along metapath, starting the end_node
 
-        Inputs:
+    inputs:
+    -------
         graph: HetGraph
             underlying graph
 
@@ -289,11 +292,11 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
         N: int
             number of random walks which must make it to the end of the metapath
 
-    Outputs:
+    outputs:
+    --------
         approx_hs_vector: pandas df
             approximate pruned hetesim probability vector for random walks along reverse of given metapath 
             from end_node
-
     """
 
     path_len = int((len(metapath)-1)/2)
@@ -324,26 +327,29 @@ def _compute_approx_pruned_hs_vector_from_right(graph, end_node, metapath, N):
 
 def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
     """
-        finds all metapaths with given start/end nodes and of given length
+    finds all metapaths with given start/end nodes and of given length
 
-        Inputs:
-            graph: HetGraph
-                graph where hetesim is to be computed
+    inputs:
+    -------
+        graph: HetGraph
+            graph where hetesim is to be computed
 
-            source_nodes: list of strs
-                list of source node cuis, all source nodes must have same type
+        source_nodes: list of strs
+            list of source node cuis, all source nodes must have same type
 
-            target_node: list of str
-                list of target node cui, all target nodes must have same type
+        target_node: list of str
+            list of target node cui, all target nodes must have same type
 
-            path_len: int
-                path length, must be even
+        path_len: int
+            path length, must be even
 
-        Output:
-            (metapaths, max_one_sided_k): tuple (list, int)
-                metapaths is list of metapaths, max_one_sided_k is the max one-sided number of reachable center layer nodes.
+    outputs:
+    --------
+        (metapaths, max_one_sided_k): tuple (list, int)
+            metapaths is list of metapaths, max_one_sided_k is the max 
+            one-sided number of reachable center layer nodes.
     """
-    
+
     graph.reset_max_one_sided_k()
     metapaths = []
     for s in source_nodes:
@@ -361,30 +367,32 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
 
 def randomized_pruned_hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, epsilon, r):
     """
-        computes hetesim for all metapaths of specified length between the source nodes and the target node
+    computes hetesim for all metapaths of specified length between the source nodes and the target node
 
-        Input:
-            graph: HetGraph
-                graph where hetesim is to be computed
+    inputs:
+    -------
+        graph: HetGraph
+            graph where hetesim is to be computed
 
-            source_nodes: list of strs
-                list of source node cuis, all source nodes must have same type
+        source_nodes: list of strs
+            list of source node cuis, all source nodes must have same type
 
-            target_node: list of str
-                list of target node cui, all target nodes must have same type
+        target_node: list of str
+            list of target node cui, all target nodes must have same type
 
-            path_len: int
-                path length, must be even
+        path_len: int
+            path length, must be even
 
-            epsilon: float
-                error tolerance
+        epsilon: float
+            error tolerance
 
-            r: float
-                probability of achieving error tolerance
+        r: float
+            probability of achieving error tolerance
 
-        Outputs:
-            approximate_pruned_hetesim_scores: dict of dicts
-                accessed as hetesim_scores[metapath][source][target]
+    outputs:
+    --------
+        approximate_pruned_hetesim_scores: dict of dicts
+            accessed as hetesim_scores[metapath][source][target]
     """
 
     # find metapaths
@@ -398,31 +406,33 @@ def randomized_pruned_hetesim_all_metapaths(graph, source_nodes, target_nodes, p
 
 def approximate_mean_pruned_hetesim(graph, source_nodes, target_node, path_len, epsilon, r):
     """
-        computes an approximation to the mean pruned hetesim score for each source node.
-        For a random subset of metapaths, the randomized pruned hetesim algorithm is used.
-        Then the results are averaged.
+    computes an approximation to the mean pruned hetesim score for each source node.
+    For a random subset of metapaths, the randomized pruned hetesim algorithm is used.
+    Then the results are averaged.
 
-        Input:
-            graph: HetGraph
-                graph where pruned hetesim is to be computed
+    inputs:
+    -------
+        graph: HetGraph
+            graph where pruned hetesim is to be computed
 
-            source_nodes: list of strs
-                list of source node cuis, all source nodes must have same type
+        source_nodes: list of strs
+            list of source node cuis, all source nodes must have same type
 
-            target_node: str
-                target node cui
+        target_node: str
+            target node cui
 
-            path_len: int
-                path length, must be even
+        path_len: int
+            path length, must be even
 
-            epsilon: float
-                (additive) error tolerance
+        epsilon: float
+            (additive) error tolerance
 
-            r: float
-                probability of achieving error tolerance
+        r: float
+            probability of achieving error tolerance
 
-        Outputs:
-            approximate_mean_pruned_hetesim_scores: dict mapping str to float
+    outputs:
+    --------
+        approximate_mean_pruned_hetesim_scores: dict mapping str to float
     """
     #find all metapaths
     k_one_sided, mps = find_all_metapaths(graph, source_nodes, [target_node], path_len)

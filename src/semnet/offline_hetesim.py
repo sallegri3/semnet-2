@@ -3,6 +3,7 @@
 This module implements deterministic hetesim for the datastructure HetGraph given in offline.py
 """
 
+
 # Import modules
 import math
 import random
@@ -13,9 +14,8 @@ def hetesim(graph, start_nodes, end_nodes, metapaths):
     computes all hetesim scores between elements of start_nodes and end_nodes,
     under elements of metapaths
 
-
-    Inputs:
-    _______
+    inputs:
+    -------
         graph: HetGraph
             underlying graph
 
@@ -84,7 +84,8 @@ def _compute_hs_vector_from_left(graph, start_node, metapath):
     """
     computes the left-hand-side probability vector used to compute hetesim
 
-        Inputs:
+    inputs:
+    -------
         graph: HetGraph
             underlying graph
 
@@ -95,7 +96,8 @@ def _compute_hs_vector_from_left(graph, start_node, metapath):
             metapath for which to compute probability vector
 
 
-    Outputs:
+    outputs:
+    --------
         hs_vector: dict mapping center-layer nodes to probabilities
            hetesim probability vector for random walks along given metapath from start_node
     """
@@ -138,7 +140,8 @@ def _compute_hs_vector_from_right(graph, end_node, metapath):
     """
     computes the right-hand-side probability vector used to compute hetesim
 
-        Inputs:
+    inputs:
+    -------
         graph: HetGraph
             underlying graph
 
@@ -149,7 +152,8 @@ def _compute_hs_vector_from_right(graph, end_node, metapath):
             metapath for which to compute probability vector
 
 
-    Outputs:
+    outputs:
+    --------
         hs_vector: dict mapping center-layer nodes to probabilities
            hetesim probability vector for random walks along given metapath from end_node
     """
@@ -183,7 +187,20 @@ def _compute_hs_vector_from_right(graph, end_node, metapath):
 
 
 def _cos_similarity(vec_1, vec_2):
+    '''
 
+
+        inputs:
+        -------
+            name: type
+                description
+
+
+        outputs:
+        --------
+            name: type
+                description
+    '''
     # compute length of the two vectors
     if not vec_1 or not vec_2:
         return 0 
@@ -203,7 +220,8 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_meta
     """
     computes hetesim for all metapaths of specified length between the source nodes and the target node
 
-    Input:
+    inputs:
+    -------
         graph: HetGraph
             graph where hetesim is to be computed
 
@@ -220,7 +238,8 @@ def hetesim_all_metapaths(graph, source_nodes, target_nodes, path_len, find_meta
             if true, use metapath enumeration based on walks in schema
             if false, use metapath enumeration based on paths in the graph
 
-    Outputs:
+    outputs:
+    --------
         hetesim_scores: dict of dicts
             accessed as hetesim_scores[metapath][source][target]
     """
@@ -246,7 +265,8 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
     """ 
     returns a list of all metapaths of specified length between specified nodes
 
-    Inputs:
+    inputs:
+    -------
         graph: HetGraph
             graph to search in
     
@@ -274,7 +294,8 @@ def find_all_metapaths(graph, source_nodes, target_nodes, path_len):
 
 def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapaths_from_schema_walks=False):
     """
-    Inputs:
+    inputs:
+    -------
         graph: HetGraph
             graph where HeteSim is to be computed
 
@@ -291,7 +312,8 @@ def mean_hetesim_scores(graph, source_nodes, target_node, path_len, find_metapat
             if true, use metapath enumeration based on walks in schema
             if false, use metapath enumeration based on paths in the graph
 
-    Outputs:
+    outputs:
+    --------
         mean_hetesim: dict
             dict mapping source node cui to mean hetesim score
     """
@@ -319,7 +341,8 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
     """
     This function computes an approximate mean hetesim score for each source node with respect to a fixed target node.  The approximation is taken by selecting only m metapaths for computation of hetesim, and taking the average of those m scores.  m is selected based on error tolerance epsilon and r.
 
-    Inputs:
+    inputs:
+    -------
         graph: HetGraph
             graph where HeteSim is to be computed
 
@@ -342,7 +365,8 @@ def approximate_mean_hetesim_scores(graph, source_nodes, target_node, path_len, 
             if true, use metapath enumeration based on walks in schema
             if false, use metapath enumeration based on paths in the graph
 
-    Outputs:
+    outputs:
+    --------
         mean_hetesim: dict
             dict mapping source node cui to approximate mean hetesim score
     """
