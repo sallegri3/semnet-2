@@ -30,11 +30,11 @@ This project uses the following technologies:
 
 ## Usage
 
-To see a 
+To see an example use case of semnet, navigate to `/examples/biomedical_kg_example.ipynb`
 
 ## Project Status
 
-This project is currently in progress and still being actively developed.
+This project is currently released for public use and is being actively maintained.
 
 ## Contributing
 
@@ -48,6 +48,8 @@ To cite this project and/or code, please use the following citation:
 **citation**
 ```
 
+Alternatively, use GitHub's built in citation feature / CITATION.cff.
+
 ## License
 
-This project does not use a license and is the for the sole use of members of the Laboratory for Pathology Dynamics.
+This project uses the GNU AGPLv3 license. In addition to the terms of this license, any work using this code must cite this repository using the instructions above.

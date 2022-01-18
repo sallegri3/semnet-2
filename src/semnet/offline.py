@@ -437,17 +437,6 @@ class HetGraph():
         Recursively compute all nodes $DEPTH steps away that feed into $NODE
 
         Similar to `_fan_out()` but looks at incoming edges instead of outgoing edges.
-
-        inputs:
-        -------
-            name: type
-                description
-
-
-        outputs:
-        --------
-            name: type
-                description
         '''
 
         # If depth is 0, just return current node
@@ -479,17 +468,6 @@ class HetGraph():
         Recursively compute all nodes $DEPTH steps away that feed into $NODE
 
         Similar to `_schema_fan_out()` but looks at incoming edges instead of outgoing edges.
-
-        inputs:
-        -------
-            name: type
-                description
-
-
-        outputs:
-        --------
-            name: type
-                description
         '''
 
         # If depth is 0, just return current node
@@ -541,17 +519,6 @@ class HetGraph():
     def _merge_paths(self, curr_path, curr_node, next_path):
         '''
         Computes the set of nodes reachable along metapath starting from source_node
-
-        inputs:
-        -------
-            name: type
-                description
-
-
-        outputs:
-        --------
-            name: type
-                description
         '''
 
         if isinstance(curr_path, str):
@@ -617,17 +584,6 @@ class HetGraph():
     def _path_to_metapath(self, path):
         '''
         Get metapath from a path segment.
-
-        inputs:
-        -------
-            name: type
-                description
-
-
-        outputs:
-        --------
-            name: type
-                description
         '''
 
         return [self.x2type[x] for x in path]
@@ -636,16 +592,5 @@ class HetGraph():
     def _path_to_string(self, path):
         '''
         Turn (meta)path from list into string.
-
-        inputs:
-        -------
-            name: type
-                description
-
-
-        outputs:
-        --------
-            name: type
-                description
         '''
         return '->'.join(path)

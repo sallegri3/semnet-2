@@ -1,11 +1,15 @@
+
+"""Test of randomized_hetesim.py."""
+
+
 import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
 
-sys.path.insert(0,'/nethome/akirkpatrick3/semnet/semnet')
-from offline import HetGraph
-from randomized_hetesim import randomized_pruned_hetesim, restricted_random_walk_on_metapath, randomized_pruned_hetesim_all_metapaths, approximate_mean_pruned_hetesim
+from semnet.offline import HetGraph
+from semnet.randomized_hetesim import randomized_pruned_hetesim, restricted_random_walk_on_metapath, randomized_pruned_hetesim_all_metapaths, approximate_mean_pruned_hetesim
+
 
 def test_restricted_random_walk_on_metapath(tg1):
     mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']
@@ -68,8 +72,8 @@ if __name__ == '__main__':
     toy_graph_4 = HetGraph(toy_graph_4_df.to_dict(orient='records'))
 
     # some basic tests
-    #print("Number of nodes with a least 1 outgoing edge: " + str(len(toy_graph_1.outgoing_edges)))
-    #print("Number of nodes with a least 1 incoming edge: " + str(len(toy_graph_1.incoming_edges)))
+        # print("Number of nodes with a least 1 outgoing edge: " + str(len(toy_graph_1.outgoing_edges)))
+        # print("Number of nodes with a least 1 incoming edge: " + str(len(toy_graph_1.incoming_edges)))
     
     mp1 = ['t1', 'r1', 't2', 'r2', 't3', 'r3', 't1', 'r1', 't4']
     mp2 = ['t1', 'r1', 't2', 'r1', 't3', 'r1', 't4', 'r1', 't5', 'r1', 't6', 'r1', 't7']

@@ -206,18 +206,20 @@ def _compute_hs_vector_from_right(graph, end_node, metapath):
 
 def _cos_similarity(vec_1, vec_2):
     '''
-
+    Calculate the cosine similarity between two vectors.
 
         inputs:
         -------
-            name: type
-                description
+            vec_1: list of floats
+                Vector 1.
 
+            vec_2: list of floats
+                Vector 2.
 
         outputs:
         --------
-            name: type
-                description
+            cos_sim: type
+                The cosine similarity between the two vectors.
     '''
     # compute length of the two vectors
     if not vec_1 or not vec_2:
